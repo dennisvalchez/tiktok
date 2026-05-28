@@ -447,9 +447,9 @@ body.overlay-mode #syncDotOverlay {
 //  CONFIG — uses PieSocket demo (no signup)
 //  Channel is unique to you via CHANNEL_ID
 // ══════════════════════════════════════════
-const CLUSTER   = 'demo';
-const API_KEY   = 'VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV';
-const CHANNEL_ID = 'dennisvalchez-reading-queue-v1'; // unique to you
+const CLUSTER   = 'us1';
+const API_KEY   = 'demo';
+const CHANNEL_ID = 'dennisvalchez-live-sync-2026'; // unique to you
 
 const TYPES = {
   yn:   { label:'YES / NO', badgeClass:'badge-yn',   time:10 },
@@ -1017,6 +1017,16 @@ document.getElementById('nameInput')?.addEventListener('keydown', e => {
 
 // ══ INIT ══
 connectWS();
+
+// FORCE RESYNC FOR TIKTOK STUDIO
+if (isOverlay) {
+  setInterval(() => {
+    try {
+      requestState();
+    } catch(e) {}
+  }, 1000);
+}
+
 // Overlay now requests state inside ws.onopen
 renderCurrent();
 renderQueue();
