@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Queue Overlay</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;700&display=swap');
+
+:root {
+  --white: #ffffff;
+  --black: #0a0a0a;
+  --border: rgba(0,0,0,0.18);
+  --accent: #1a1a1a;
+  --soft: rgba(0,0,0,0.06);
+  --radius: 14px;
+  --shadow: 0 2px 20px rgba(0,0,0,0.13), 0 0 0 1.5px rgba(0,0,0,0.10);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+/* ════════════════════════════════
+   OVERLAY WIDGET (viewer-facing)
+════════════════════════════════ */
+#overlay {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Current card */
+.card-current {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-current.hidden { display: none; }
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.current-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--black);
+  line-height: 1.1;
+  flex: 1;
+}
+
+.type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  border: 1.5px solid currentColor;
+}
+
+.badge-yn    { color: #555; border-color: #ccc; background: #f5f5f5; }
+.badge-q     { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
+.badge-guid  { color: #7c3aed; border-color: #ddd6fe; background: #f5f3ff; }
+.badge-mini  { color: #059669; border-color: #a7f3d0; background: #ecfdf5; }
+.badge-med   { color: #d97706; border-color: #fde68a; background: #fffbeb; }
+.badge-deep  { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+
+/* Divider line */
+.card-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+
+/* Timer row */
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timer-display {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: 1px;
+  line-height: 1;
+  min-width: 90px;
+}
+
+.timer-display.urgent { color: #dc2626; }
+.timer-display.hidden { display: none; }
+
+.yn-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--black);
+  font-style: italic;
+  line-height: 1;
+}
+.yn-text.hidden { display: none; }
+
+.timer-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  display: none;
+}
+.timer-bar-wrap.visible { display: block; }
+.timer-bar {
+  height: 100%;
+  background: var(--black);
+  border-radius: 4px;
+  transition: width 0.5s linear;
+  width: 100%;
+}
+.timer-bar.urgent { background: #dc2626; }
+
+/* Up next strip */
+.card-upnext {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-upnext.hidden { display: none; }
+
+.upnext-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.35);
+  white-space: nowrap;
+}
+
+.upnext-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upnext-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+/* confetti */
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  animation: confettiFall linear forwards;
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 2px;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg) translateX(0); opacity:1; }
+  80%  { opacity:1; }
+  100% { transform: translateY(110vh) rotate(720deg) translateX(var(--drift)); opacity:0; }
+}
+
+/* ════════════════════════════════
+   CONTROL PANEL
+════════════════════════════════ */
+#panel {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #f0ede8;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body.overlay-mode #panel  { display: none !important; }
+body.overlay-mode #overlay { pointer-events: none; }
+body.overlay-mode { background: transparent !important; }
+
+.panel-header {
+  background: white;
+  border-bottom: 1px solid #ddd;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--black);
+}
+
+.panel-body {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Left: add person */
+.add-col {
+  width: 300px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid #ddd;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.col-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.4);
+  margin-bottom: -6px;
+}
+
+.name-input {
+  width: 100%;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--black);
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.name-input:focus { border-color: #aaa; background: white; }
+.name-input::placeholder { color: #bbb; font-style: italic; }
+
+/* Type grid */
+.type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.type-option {
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.type-option:hover { background: #f0f0f0; border-color: #bbb; }
+.type-option.selected { background: var(--black); border-color: var(--black); }
+.type-option.selected .to-name { color: white; }
+.type-option.selected .to-time { color: rgba(255,255,255,0.5); }
+
+.to-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--black);
+  line-height: 1;
+}
+.to-time {
+  font-size: 10px;
+  color: #999;
+}
+
+.add-btn {
+  width: 100%;
+  background: var(--black);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: opacity 0.15s;
+}
+.add-btn:hover { opacity: 0.8; }
+.add-btn:active { opacity: 0.6; }
+
+/* Right: queue + controls */
+.queue-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px;
+  gap: 14px;
+}
+
+/* Current person big card */
+.current-block {
+  background: white;
+  border: 1.5px solid #ddd;
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.current-block.empty { opacity: 0.4; }
+
+.cb-info { flex: 1; min-width: 0; }
+.cb-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cb-sub {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.cb-timer {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--black);
+  min-width: 80px;
+  text-align: center;
+}
+.cb-timer.urgent { color: #dc2626; }
+
+.cb-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-start {
+  background: var(--black);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  min-width: 100px;
+  text-align: center;
+}
+.btn-start:hover { opacity: 0.75; }
+
+.btn-done {
+  background: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  text-align: center;
+}
+.btn-done:hover { background: #e0e0e0; }
+
+/* Queue list */
+.queue-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.queue-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.q-item {
+  background: white;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: grab;
+  transition: box-shadow 0.15s, opacity 0.15s;
+}
+.q-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+.q-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ccc;
+  min-width: 18px;
+}
+.q-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--black);
+  flex: 1;
+}
+.q-remove {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.q-remove:hover { color: #dc2626; }
+
+.empty-queue {
+  text-align: center;
+  padding: 30px 20px;
+  color: #bbb;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* keyboard hint */
+.kbd-hint {
+  font-size: 11px;
+  color: #bbb;
+  text-align: center;
+  padding: 6px 0 0;
+  flex-shrink: 0;
+}
+.kbd-hint kbd {
+  background: #eee;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: monospace;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ OVERLAY (viewer sees this) ══════════════ -->
+<div id="overlay">
+  <div class="card-current hidden" id="cardCurrent">
+    <div class="card-top">
+      <div class="current-name" id="ovName">—</div>
+      <div class="type-badge" id="ovBadge"></div>
+    </div>
+    <div class="card-divider"></div>
+    <div class="timer-row">
+      <div class="timer-display hidden" id="ovTimer">00:00</div>
+      <div class="yn-text hidden" id="ovYN">Yes / No</div>
+      <div class="timer-bar-wrap" id="ovBarWrap">
+        <div class="timer-bar" id="ovBar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card-upnext hidden" id="cardUpnext">
+    <span class="upnext-label">Up next</span>
+    <span class="upnext-name" id="ovUpnextName"></span>
+    <span class="upnext-badge" id="ovUpnextBadge"></span>
+  </div>
+</div>
+
+<!-- ══════════════ CONTROL PANEL ══════════════ -->
+<div id="panel">
+  <div class="panel-header">
+    <div class="panel-title">✦ Reading Queue</div>
+    <div style="font-size:12px;color:#aaa;">Press <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;">Space</kbd> to start · <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;">Enter</kbd> next · <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;">R</kbd> reset</div>
+  </div>
+
+  <div class="panel-body">
+    <!-- ADD PERSON -->
+    <div class="add-col">
+      <div class="col-label">Add to queue</div>
+      <input class="name-input" id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off"/>
+
+      <div class="col-label">Reading type</div>
+      <div class="type-grid" id="typeGrid">
+        <div class="type-option selected" data-type="yn" data-label="Y / N" data-time="0" onclick="selectType(this)">
+          <div class="to-name">Yes / No</div>
+          <div class="to-time">No timer</div>
+        </div>
+        <div class="type-option" data-type="q" data-label="Question" data-time="0" onclick="selectType(this)">
+          <div class="to-name">Question</div>
+          <div class="to-time">No timer</div>
+        </div>
+        <div class="type-option" data-type="guid" data-label="Guidance" data-time="0" onclick="selectType(this)">
+          <div class="to-name">Guidance</div>
+          <div class="to-time">No timer</div>
+        </div>
+        <div class="type-option" data-type="mini" data-label="Mini Read" data-time="60" onclick="selectType(this)">
+          <div class="to-name">Mini Reading</div>
+          <div class="to-time">1 min</div>
+        </div>
+        <div class="type-option" data-type="med" data-label="Mediumship" data-time="180" onclick="selectType(this)">
+          <div class="to-name">Mediumship</div>
+          <div class="to-time">3 min</div>
+        </div>
+        <div class="type-option" data-type="deep" data-label="In-Depth" data-time="300" onclick="selectType(this)">
+          <div class="to-name">In-Depth Read</div>
+          <div class="to-time">5 min</div>
+        </div>
+      </div>
+
+      <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
+    </div>
+
+    <!-- QUEUE + CONTROLS -->
+    <div class="queue-col">
+      <!-- Current -->
+      <div class="col-label">Now reading</div>
+      <div class="current-block empty" id="cbBlock">
+        <div class="cb-info">
+          <div class="cb-name" id="cbName">No one yet</div>
+          <div class="cb-sub" id="cbSub">Add someone to begin</div>
+        </div>
+        <div class="cb-timer hidden" id="cbTimer">—</div>
+        <div class="cb-btns">
+          <button class="btn-start" id="btnStart" onclick="startStop()">▶ Start</button>
+          <button class="btn-done" onclick="markDone()">✓ Done / Next</button>
+        </div>
+      </div>
+
+      <!-- Queue -->
+      <div class="queue-label-row">
+        <div class="col-label">Queue <span id="qCount" style="color:#bbb">(0)</span></div>
+      </div>
+      <div class="queue-scroll" id="queueList">
+        <div class="empty-queue" id="emptyMsg">No one in queue yet</div>
+      </div>
+      <div class="kbd-hint">Keyboard: <kbd>Space</kbd> start/pause · <kbd>Enter</kbd> next person · <kbd>R</kbd> reset timer</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const TYPES = {
+  yn:   { label:'Y / N',      badgeClass:'badge-yn',   time:0   },
+  q:    { label:'Question',   badgeClass:'badge-q',    time:0   },
+  guid: { label:'Guidance',   badgeClass:'badge-guid', time:0   },
+  mini: { label:'Mini Read',  badgeClass:'badge-mini', time:60  },
+  med:  { label:'Mediumship', badgeClass:'badge-med',  time:180 },
+  deep: { label:'In-Depth',   badgeClass:'badge-deep', time:300 },
+};
+
+let queue = [];       // [{name, type}]
+let current = null;   // {name, type, totalSecs, remaining, running, interval}
+let selectedType = 'yn';
+
+// ── OVERLAY MODE ──
+if (new URLSearchParams(location.search).get('overlay') === '1') {
+  document.body.classList.add('overlay-mode');
+}
+
+// ── SELECT TYPE ──
+function selectType(el) {
+  document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = el.dataset.type;
+}
+
+// ── ADD PERSON ──
+function addPerson() {
+  const raw = document.getElementById('nameInput').value.trim();
+  if (!raw) { document.getElementById('nameInput').focus(); return; }
+  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+  queue.push({ name, type: selectedType });
+  document.getElementById('nameInput').value = '';
+  document.getElementById('nameInput').focus();
+  renderQueue();
+  // If nothing is current, auto-load first person
+  if (!current) loadNext();
+}
+
+// ── LOAD NEXT ──
+function loadNext() {
+  if (current && current.interval) clearInterval(current.interval);
+  if (queue.length === 0) { current = null; renderCurrent(); renderOverlay(); return; }
+  const person = queue.shift();
+  const t = TYPES[person.type];
+  current = {
+    name: person.name,
+    type: person.type,
+    totalSecs: t.time,
+    remaining: t.time,
+    running: false,
+    interval: null,
+  };
+  renderQueue();
+  renderCurrent();
+  renderOverlay();
+}
+
+// ── START / STOP ──
+function startStop() {
+  if (!current) return;
+  if (current.running) {
+    // pause
+    clearInterval(current.interval);
+    current.running = false;
+    document.getElementById('btnStart').textContent = '▶ Resume';
+  } else {
+    current.running = true;
+    document.getElementById('btnStart').textContent = '⏸ Pause';
+    if (current.totalSecs === 0) {
+      // Y/N or question — no timer, just mark as running (overlay shows type)
+      renderOverlay();
+      return;
+    }
+    if (current.remaining <= 0) current.remaining = current.totalSecs;
+    playChime();
+    current.interval = setInterval(() => {
+      current.remaining--;
+      renderCurrent();
+      renderOverlay();
+      if (current.remaining <= 0) {
+        clearInterval(current.interval);
+        current.running = false;
+        current.remaining = 0;
+        document.getElementById('btnStart').textContent = '▶ Start';
+        renderCurrent();
+        renderOverlay();
+        playChime();
+        launchConfetti();
+      }
+    }, 1000);
+    renderCurrent();
+    renderOverlay();
+  }
+}
+
+// ── MARK DONE / NEXT ──
+function markDone() {
+  if (current && current.interval) clearInterval(current.interval);
+  loadNext();
+}
+
+// ── RENDER CURRENT (panel) ──
+function renderCurrent() {
+  const block = document.getElementById('cbBlock');
+  const cbName = document.getElementById('cbName');
+  const cbSub = document.getElementById('cbSub');
+  const cbTimer = document.getElementById('cbTimer');
+  const btnStart = document.getElementById('btnStart');
+
+  if (!current) {
+    block.classList.add('empty');
+    cbName.textContent = 'No one yet';
+    cbSub.textContent = 'Add someone to begin';
+    cbTimer.classList.add('hidden');
+    btnStart.textContent = '▶ Start';
+    return;
+  }
+
+  block.classList.remove('empty');
+  cbName.textContent = current.name;
+  const t = TYPES[current.type];
+  cbSub.textContent = t.label + (t.time > 0 ? ` · ${t.time/60} min` : ' · No timer');
+
+  if (current.totalSecs > 0) {
+    cbTimer.classList.remove('hidden');
+    cbTimer.textContent = fmt(current.remaining);
+    cbTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+  } else {
+    cbTimer.classList.add('hidden');
+  }
+}
+
+// ── RENDER QUEUE (panel) ──
+function renderQueue() {
+  const list = document.getElementById('queueList');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const qCount = document.getElementById('qCount');
+
+  qCount.textContent = `(${queue.length})`;
+
+  // Remove all q-items
+  list.querySelectorAll('.q-item').forEach(e => e.remove());
+
+  if (queue.length === 0) {
+    emptyMsg.style.display = 'block';
+  } else {
+    emptyMsg.style.display = 'none';
+    queue.forEach((p, i) => {
+      const t = TYPES[p.type];
+      const item = document.createElement('div');
+      item.className = 'q-item';
+      item.innerHTML = `
+        <div class="q-num">${i + 1}</div>
+        <div class="q-name">${p.name}</div>
+        <span class="type-badge ${t.badgeClass}" style="font-size:9px;padding:2px 7px;">${t.label}</span>
+        <button class="q-remove" onclick="removeFromQueue(${i})">×</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  renderUpnext();
+}
+
+function removeFromQueue(i) {
+  queue.splice(i, 1);
+  renderQueue();
+}
+
+// ── RENDER OVERLAY ──
+function renderOverlay() {
+  const cardCurrent = document.getElementById('cardCurrent');
+  const ovName = document.getElementById('ovName');
+  const ovBadge = document.getElementById('ovBadge');
+  const ovTimer = document.getElementById('ovTimer');
+  const ovYN = document.getElementById('ovYN');
+  const ovBarWrap = document.getElementById('ovBarWrap');
+  const ovBar = document.getElementById('ovBar');
+
+  if (!current) {
+    cardCurrent.classList.add('hidden');
+    renderUpnext();
+    return;
+  }
+
+  cardCurrent.classList.remove('hidden');
+  ovName.textContent = current.name;
+
+  const t = TYPES[current.type];
+  ovBadge.textContent = t.label;
+  ovBadge.className = 'type-badge ' + t.badgeClass;
+
+  if (current.totalSecs > 0) {
+    ovTimer.classList.remove('hidden');
+    ovYN.classList.add('hidden');
+    ovBarWrap.classList.add('visible');
+    ovTimer.textContent = fmt(current.remaining);
+    ovTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+    const pct = current.totalSecs > 0 ? (current.remaining / current.totalSecs) * 100 : 100;
+    ovBar.style.width = pct + '%';
+    ovBar.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+  } else {
+    ovTimer.classList.add('hidden');
+    ovBarWrap.classList.remove('visible');
+    // Show type label for Y/N and question
+    ovYN.classList.remove('hidden');
+    ovYN.textContent = t.label;
+  }
+
+  renderUpnext();
+}
+
+function renderUpnext() {
+  const cardUpnext = document.getElementById('cardUpnext');
+  const ovUpnextName = document.getElementById('ovUpnextName');
+  const ovUpnextBadge = document.getElementById('ovUpnextBadge');
+
+  if (queue.length === 0) {
+    cardUpnext.classList.add('hidden');
+    return;
+  }
+  const next = queue[0];
+  const t = TYPES[next.type];
+  cardUpnext.classList.remove('hidden');
+  ovUpnextName.textContent = next.name;
+  ovUpnextBadge.textContent = t.label;
+  ovUpnextBadge.className = 'upnext-badge ' + t.badgeClass;
+}
+
+// ── FORMAT TIME ──
+function fmt(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+// ── SOFT CHIME ──
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.12, ctx.currentTime);
+    master.connect(ctx.destination);
+
+    const convolver = ctx.createConvolver();
+    const irLen = ctx.sampleRate * 1.2;
+    const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 3);
+    }
+    convolver.buffer = ir;
+    convolver.connect(master);
+
+    [[660,1.0,2.8],[1320,0.45,2.2],[1980,0.18,1.6],[2640,0.08,1.0]].forEach(([freq,vol,decay]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + decay);
+      osc.connect(gain);
+      gain.connect(convolver);
+      gain.connect(master);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + decay + 0.1);
+    });
+  } catch(e) {}
+}
+
+// ── CONFETTI ──
+function launchConfetti() {
+  const colors = ['#c084fc','#f472b6','#fb923c','#facc15','#34d399','#60a5fa','#ffffff'];
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.width = (Math.random() * 7 + 5) + 'px';
+      el.style.height = (Math.random() * 7 + 5) + 'px';
+      el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      const dur = Math.random() * 2 + 2;
+      el.style.animationDuration = dur + 's';
+      el.style.setProperty('--drift', (Math.random() * 200 - 100) + 'px');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), dur * 1000 + 500);
+    }, Math.random() * 600);
+  }
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement.tagName;
+  if (tag === 'INPUT') return;
+  if (e.code === 'Space')  { e.preventDefault(); startStop(); }
+  if (e.code === 'Enter')  { e.preventDefault(); markDone(); }
+  if (e.code === 'KeyR')   { if (current) { current.remaining = current.totalSecs; renderCurrent(); renderOverlay(); } }
+});
+
+// ── ENTER on name input adds person ──
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPerson();
+});
+
+// Init
+renderCurrent();
+renderQueue();
+renderOverlay();
+</script>
+</body>
+</html>
