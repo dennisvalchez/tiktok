@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dennis Valchez OBS Reading Control</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700;900&display=swap');
+
+:root{
+  --black:#0a0a0a;
+  --soft:#f0ede8;
+  --border:rgba(0,0,0,.15);
+  --shadow:0 2px 20px rgba(0,0,0,.12),0 0 0 1.5px rgba(0,0,0,.09);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent!important;
+  font-family:'DM Sans',sans-serif;
+  color:var(--black);
+}
+
+/* ================= OVERLAY MODE ================= */
+#overlay{
+  position:fixed;
+  top:30px;
+  left:30px;
+  width:620px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  pointer-events:none;
+  z-index:20;
+}
+.card-current{
+  background:#fff;
+  border:2px solid var(--border);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  padding:22px 26px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.current-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:52px;
+  font-weight:700;
+  line-height:1.05;
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.current-name.idle{
+  font-size:46px;
+  text-align:center;
+  white-space:normal;
+}
+.type-badge{
+  font-size:16px;
+  font-weight:900;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  padding:6px 14px;
+  border-radius:10px;
+  white-space:nowrap;
+  border:2px solid currentColor;
+}
+.badge-yn{color:#555;border-color:#ccc;background:#f5f5f5;}
+.badge-q{color:#2563eb;border-color:#bfdbfe;background:#eff6ff;}
+.badge-guid{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff;}
+.badge-mini{color:#059669;border-color:#a7f3d0;background:#ecfdf5;}
+.badge-med{color:#d97706;border-color:#fde68a;background:#fffbeb;}
+.badge-deep{color:#dc2626;border-color:#fecaca;background:#fef2f2;}
+.card-divider{height:2px;background:var(--border);}
+.timer-row{display:flex;align-items:center;gap:14px;justify-content:center;}
+.timer-display{
+  font-family:'Cormorant Garamond',serif;
+  font-size:84px;
+  font-weight:700;
+  letter-spacing:2px;
+  line-height:1;
+  min-width:190px;
+  text-align:center;
+}
+.timer-display.urgent{color:#dc2626;animation:pulseUrgent 1s infinite;}
+@keyframes pulseUrgent{
+  0%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.06);opacity:.72;}
+  100%{transform:scale(1);opacity:1;}
+}
+.idle-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:30px;
+  font-weight:600;
+  line-height:1.15;
+  text-align:center;
+  width:100%;
+}
+.timer-bar-wrap{
+  height:7px;
+  background:rgba(0,0,0,.08);
+  border-radius:8px;
+  overflow:hidden;
+  display:none;
+}
+.timer-bar{
+  height:100%;
+  width:100%;
+  background:var(--black);
+  border-radius:8px;
+  transition:width .25s linear;
+}
+.timer-bar.urgent{background:#dc2626;}
+.card-upnext{
+  background:#fff;
+  border:2px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 1px 8px rgba(0,0,0,.07);
+  padding:12px 20px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.hidden{display:none!important;}
+.upnext-label{
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.35);
+  white-space:nowrap;
+}
+.upnext-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  flex:1;
+}
+.upnext-badge{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:7px;
+  border:1.5px solid currentColor;
+  white-space:nowrap;
+}
+
+/* ================= PANEL MODE ================= */
+#panel{
+  width:100%;
+  height:100%;
+  background:var(--soft);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.panel-header{
+  background:white;
+  border-bottom:1px solid #ddd;
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-shrink:0;
+}
+.panel-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:24px;
+  font-weight:700;
+}
+.status-pill{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:#059669;
+  background:#ecfdf5;
+  border:1px solid #a7f3d0;
+  border-radius:999px;
+  padding:5px 10px;
+}
+.panel-body{
+  flex:1;
+  display:grid;
+  grid-template-columns:300px 1fr;
+  min-height:0;
+}
+.left-col{
+  background:white;
+  border-right:1px solid #ddd;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:auto;
+}
+.right-col{
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+  overflow:hidden;
+}
+.col-label{
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.38);
+}
+.input{
+  width:100%;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;
+  font-weight:700;
+  background:#fafafa;
+  outline:none;
+}
+.input.big{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;
+}
+.input:focus{border-color:#aaa;background:white;}
+.type-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.type-option{
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:9px 10px;
+  cursor:pointer;
+  background:#fafafa;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  transition:all .15s;
+  user-select:none;
+}
+.type-option:hover{background:#f0f0f0;border-color:#bbb;}
+.type-option.selected{background:var(--black);border-color:var(--black);color:white;}
+.to-name{font-size:12px;font-weight:900;line-height:1;}
+.to-time{font-size:10px;color:#999;}
+.type-option.selected .to-time{color:rgba(255,255,255,.55);}
+.btn{
+  border:none;
+  border-radius:10px;
+  font-family:'DM Sans',sans-serif;
+  font-weight:900;
+  cursor:pointer;
+  transition:opacity .15s,background .15s;
+  padding:11px 12px;
+  font-size:14px;
+}
+.btn-dark{background:var(--black);color:white;}
+.btn-light{background:#f0f0f0;color:#555;border:1px solid #ddd;}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+.btn:hover{opacity:.82;}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.current-block{
+  background:white;
+  border:1.5px solid #ddd;
+  border-radius:14px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+}
+.current-block.empty{opacity:.55;}
+.cb-info{flex:1;min-width:0;}
+.cb-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:24px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.cb-sub{font-size:12px;color:#999;margin-top:2px;}
+.cb-timer{
+  font-family:'Cormorant Garamond',serif;
+  font-size:36px;
+  font-weight:700;
+  min-width:86px;
+  text-align:center;
+}
+.cb-timer.urgent{color:#dc2626;}
+.cb-btns{display:flex;flex-direction:column;gap:7px;}
+.queue-scroll{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+.q-item{
+  background:white;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+.q-num{font-size:11px;font-weight:900;color:#ccc;min-width:18px;}
+.q-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;
+  font-weight:700;
+  flex:1;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.q-remove{
+  background:none;
+  border:none;
+  color:#bbb;
+  font-size:18px;
+  cursor:pointer;
+  padding:2px 4px;
+}
+.q-remove:hover{color:#dc2626;}
+.empty-queue{
+  text-align:center;
+  padding:30px 20px;
+  color:#aaa;
+  font-size:13px;
+  font-style:italic;
+  background:rgba(255,255,255,.55);
+  border-radius:12px;
+}
+.kbd-hint{
+  font-size:11px;
+  color:#999;
+  text-align:center;
+  padding-top:2px;
+}
+kbd{
+  background:#eee;
+  border:1px solid #ddd;
+  border-radius:4px;
+  padding:1px 5px;
+  font-size:10px;
+  font-family:monospace;
+}
+
+/* Modes */
+body.mode-overlay #panel{display:none!important;}
+body.mode-overlay #overlay{display:flex!important;}
+body.mode-panel #overlay{display:none!important;}
+body.mode-panel #panel{display:flex!important;}
+body.mode-both #overlay{display:flex!important;}
+body.mode-both #panel{
+  position:fixed;
+  right:30px;
+  top:30px;
+  width:560px;
+  height:calc(100vh - 60px);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+}
+body.mode-both #overlay{left:30px;top:30px;}
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <div class="card-current" id="cardCurrent">
+    <div class="card-top">
+      <div class="current-name" id="ovName">Ask Psychic Medium</div>
+      <div class="type-badge badge-q" id="ovBadge">LIVE</div>
+    </div>
+    <div class="card-divider"></div>
+    <div class="timer-row">
+      <div class="timer-display hidden" id="ovTimer">00:00</div>
+      <div class="idle-text" id="ovIdleText">Check "Viewer Wishlist"<br>to join the queue</div>
+    </div>
+    <div class="timer-bar-wrap" id="ovBarWrap"><div class="timer-bar" id="ovBar"></div></div>
+  </div>
+
+  <div class="card-upnext hidden" id="cardUpnext">
+    <span class="upnext-label">Up Next</span>
+    <span class="upnext-name" id="ovUpnextName"></span>
+    <span class="upnext-badge" id="ovUpnextBadge"></span>
+  </div>
+
+  <div class="card-upnext" id="queueCounterCard">
+    <span class="upnext-label">Queue</span>
+    <span class="upnext-name" id="queueCounterText">No one waiting</span>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="panel-header">
+    <div class="panel-title">✦ OBS Reading Control</div>
+    <div class="status-pill" id="syncStatus">SYNC ON</div>
+  </div>
+
+  <div class="panel-body">
+    <div class="left-col">
+      <div class="col-label">Main overlay title</div>
+      <input class="input" id="idleTitleInput" value="Ask Psychic Medium" autocomplete="off">
+
+      <div class="col-label">Subtitle / instruction</div>
+      <input class="input" id="idleSubtitleInput" value='Check "Viewer Wishlist" to join the queue' autocomplete="off">
+
+      <div class="col-label">Add to queue</div>
+      <input class="input big" id="nameInput" placeholder="Name…" maxlength="28" autocomplete="off">
+
+      <div class="col-label">Reading type</div>
+      <div class="type-grid" id="typeGrid">
+        <div class="type-option selected" data-type="yn" onclick="selectType(this)"><div class="to-name">Yes / No</div><div class="to-time">10 sec</div></div>
+        <div class="type-option" data-type="q" onclick="selectType(this)"><div class="to-name">Question</div><div class="to-time">20 sec</div></div>
+        <div class="type-option" data-type="guid" onclick="selectType(this)"><div class="to-name">Guidance</div><div class="to-time">20 sec</div></div>
+        <div class="type-option" data-type="mini" onclick="selectType(this)"><div class="to-name">Mini Reading</div><div class="to-time">1 min</div></div>
+        <div class="type-option" data-type="med" onclick="selectType(this)"><div class="to-name">Mediumship</div><div class="to-time">3 min</div></div>
+        <div class="type-option" data-type="deep" onclick="selectType(this)"><div class="to-name">In-Depth</div><div class="to-time">5 min</div></div>
+      </div>
+
+      <button class="btn btn-dark" onclick="addPerson()">＋ Add to Queue</button>
+
+      <div class="btn-row">
+        <button class="btn btn-light" onclick="saveTextSettings()">Save Text</button>
+        <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="col-label">Now reading</div>
+      <div class="current-block empty" id="cbBlock">
+        <div class="cb-info">
+          <div class="cb-name" id="cbName">No one yet</div>
+          <div class="cb-sub" id="cbSub">Add someone to begin</div>
+        </div>
+        <div class="cb-timer hidden" id="cbTimer">—</div>
+        <div class="cb-btns">
+          <button class="btn btn-dark" id="btnStart" onclick="startStop()">▶ Start</button>
+          <button class="btn btn-light" onclick="markDone()">✓ Next</button>
+          <button class="btn btn-light" onclick="resetTimer()">↻ Reset</button>
+        </div>
+      </div>
+
+      <div class="col-label">Queue <span id="qCount">(0)</span></div>
+      <div class="queue-scroll" id="queueList">
+        <div class="empty-queue" id="emptyMsg">No one in queue yet</div>
+      </div>
+
+      <div class="kbd-hint"><kbd>Space</kbd> start/pause · <kbd>Enter</kbd> next · <kbd>R</kbd> reset</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CHANNEL_KEY = 'dennis_obs_reading_state_v1';
+const BROADCAST_NAME = 'dennis_obs_reading_channel_v1';
+
+const TYPES = {
+  yn:   { label:'YES / NO',    badgeClass:'badge-yn',   time:10  },
+  q:    { label:'QUESTION',    badgeClass:'badge-q',    time:20  },
+  guid: { label:'GUIDANCE',    badgeClass:'badge-guid', time:20  },
+  mini: { label:'MINI READ',   badgeClass:'badge-mini', time:60  },
+  med:  { label:'MEDIUMSHIP',  badgeClass:'badge-med',  time:180 },
+  deep: { label:'IN-DEPTH',    badgeClass:'badge-deep', time:300 }
+};
+
+let state = {
+  idleTitle:'Ask Psychic Medium',
+  idleSubtitle:'Check "Viewer Wishlist" to join the queue',
+  queue:[],
+  current:null,
+  selectedType:'yn',
+  updatedAt:Date.now()
+};
+
+let tick = null;
+let bc = null;
+
+const params = new URLSearchParams(location.search);
+const mode = params.get('panel') === '1' ? 'panel' : params.get('overlay') === '1' ? 'overlay' : 'both';
+document.body.classList.add('mode-' + mode);
+
+function $(id){ return document.getElementById(id); }
+
+function initBroadcast(){
+  try{
+    bc = new BroadcastChannel(BROADCAST_NAME);
+    bc.onmessage = e => {
+      if(e.data && e.data.type === 'state'){
+        applyState(e.data.state);
+      }
+    };
+  }catch(e){}
+  window.addEventListener('storage', e => {
+    if(e.key === CHANNEL_KEY && e.newValue){
+      try{ applyState(JSON.parse(e.newValue)); }catch(err){}
+    }
+  });
+}
+
+function loadState(){
+  try{
+    const saved = localStorage.getItem(CHANNEL_KEY);
+    if(saved){
+      state = Object.assign(state, JSON.parse(saved));
+    }
+  }catch(e){}
+}
+
+function saveState(){
+  state.updatedAt = Date.now();
+  try{ localStorage.setItem(CHANNEL_KEY, JSON.stringify(state)); }catch(e){}
+  try{ if(bc) bc.postMessage({type:'state', state}); }catch(e){}
+}
+
+function applyState(newState){
+  if(!newState) return;
+  if(newState.updatedAt && state.updatedAt && newState.updatedAt < state.updatedAt) return;
+  state = Object.assign(state, newState);
+  hydratePanelInputs();
+  renderAll();
+  manageOverlayTick();
+}
+
+function hydratePanelInputs(){
+  if(!$('idleTitleInput')) return;
+  $('idleTitleInput').value = state.idleTitle || '';
+  $('idleSubtitleInput').value = state.idleSubtitle || '';
+  document.querySelectorAll('.type-option').forEach(e => {
+    e.classList.toggle('selected', e.dataset.type === state.selectedType);
+  });
+}
+
+function selectType(el){
+  state.selectedType = el.dataset.type;
+  document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  saveState();
+  renderAll();
+}
+
+function saveTextSettings(){
+  state.idleTitle = $('idleTitleInput').value.trim() || 'Ask Psychic Medium';
+  state.idleSubtitle = $('idleSubtitleInput').value.trim() || 'Check "Viewer Wishlist" to join the queue';
+  saveState();
+  renderAll();
+}
+
+function addPerson(){
+  saveTextSettings();
+  const input = $('nameInput');
+  const raw = input.value.trim();
+  if(!raw){ input.focus(); return; }
+  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+  state.queue.push({name, type:state.selectedType});
+  input.value = '';
+  if(!state.current) loadNext(false);
+  saveState();
+  renderAll();
+}
+
+function loadNext(shouldSave=true){
+  stopTick();
+  if(state.queue.length === 0){
+    state.current = null;
+  }else{
+    const p = state.queue.shift();
+    const t = TYPES[p.type];
+    state.current = {
+      name:p.name,
+      type:p.type,
+      totalSecs:t.time,
+      remaining:t.time,
+      running:false,
+      endAt:null
+    };
+  }
+  if(shouldSave) saveState();
+  renderAll();
+}
+
+function startStop(){
+  if(!state.current) return;
+  const now = Date.now();
+
+  if(state.current.running){
+    state.current.remaining = getRemaining();
+    state.current.running = false;
+    state.current.endAt = null;
+    stopTick();
+  }else{
+    if(state.current.remaining <= 0) state.current.remaining = state.current.totalSecs;
+    state.current.running = true;
+    state.current.endAt = now + state.current.remaining * 1000;
+    startTick();
+  }
+
+  saveState();
+  renderAll();
+}
+
+function startTick(){
+  stopTick();
+  tick = setInterval(() => {
+    if(!state.current || !state.current.running) return;
+    state.current.remaining = getRemaining();
+    if(state.current.remaining <= 0){
+      state.current.running = false;
+      state.current.endAt = null;
+      stopTick();
+    }
+    saveState();
+    renderAll();
+  }, 250);
+}
+
+function manageOverlayTick(){
+  if(state.current && state.current.running) startTick();
+  else stopTick();
+}
+
+function stopTick(){
+  if(tick){ clearInterval(tick); tick = null; }
+}
+
+function getRemaining(){
+  if(!state.current) return 0;
+  if(state.current.running && state.current.endAt){
+    return Math.max(0, Math.ceil((state.current.endAt - Date.now()) / 1000));
+  }
+  return Math.max(0, state.current.remaining || 0);
+}
+
+function resetTimer(){
+  if(!state.current) return;
+  stopTick();
+  state.current.running = false;
+  state.current.remaining = state.current.totalSecs;
+  state.current.endAt = null;
+  saveState();
+  renderAll();
+}
+
+function markDone(){
+  loadNext(true);
+}
+
+function removeFromQueue(i){
+  state.queue.splice(i,1);
+  saveState();
+  renderAll();
+}
+
+function clearAll(){
+  if(!confirm('Clear current reading and full queue?')) return;
+  stopTick();
+  state.queue = [];
+  state.current = null;
+  saveState();
+  renderAll();
+}
+
+function renderAll(){
+  renderOverlay();
+  renderPanel();
+}
+
+function renderOverlay(){
+  const ovName = $('ovName');
+  const ovBadge = $('ovBadge');
+  const ovTimer = $('ovTimer');
+  const ovIdleText = $('ovIdleText');
+  const ovBarWrap = $('ovBarWrap');
+  const ovBar = $('ovBar');
+
+  if(!state.current){
+    ovName.textContent = state.idleTitle || 'Ask Psychic Medium';
+    ovName.classList.add('idle');
+    ovBadge.textContent = 'LIVE';
+    ovBadge.className = 'type-badge badge-q';
+    ovTimer.classList.add('hidden');
+    ovIdleText.classList.remove('hidden');
+    ovIdleText.innerHTML = formatSubtitle(state.idleSubtitle || 'Check "Viewer Wishlist" to join the queue');
+    ovBarWrap.style.display = 'none';
+  }else{
+    const t = TYPES[state.current.type];
+    const rem = getRemaining();
+    ovName.textContent = state.current.name;
+    ovName.classList.remove('idle');
+    ovBadge.textContent = t.label;
+    ovBadge.className = 'type-badge ' + t.badgeClass;
+    ovTimer.classList.remove('hidden');
+    ovTimer.textContent = fmt(rem);
+    ovTimer.classList.toggle('urgent', rem <= 10 && rem > 0);
+    ovIdleText.classList.add('hidden');
+    ovBarWrap.style.display = 'block';
+    const pct = state.current.totalSecs ? (rem / state.current.totalSecs) * 100 : 0;
+    ovBar.style.width = pct + '%';
+    ovBar.classList.toggle('urgent', rem <= 10 && rem > 0);
+  }
+
+  renderUpnext();
+  updateQueueCounter();
+}
+
+function renderUpnext(){
+  const card = $('cardUpnext');
+  if(state.queue.length === 0){ card.classList.add('hidden'); return; }
+  const next = state.queue[0];
+  const t = TYPES[next.type];
+  card.classList.remove('hidden');
+  $('ovUpnextName').textContent = next.name;
+  $('ovUpnextBadge').textContent = t.label;
+  $('ovUpnextBadge').className = 'upnext-badge ' + t.badgeClass;
+}
+
+function updateQueueCounter(){
+  const count = state.queue.length;
+  $('queueCounterText').textContent = count === 0 ? 'No one waiting' : count === 1 ? '1 Person Waiting' : count + ' People Waiting';
+}
+
+function renderPanel(){
+  if(!$('cbBlock')) return;
+
+  const cbBlock = $('cbBlock');
+  const cbName = $('cbName');
+  const cbSub = $('cbSub');
+  const cbTimer = $('cbTimer');
+  const btnStart = $('btnStart');
+
+  if(!state.current){
+    cbBlock.classList.add('empty');
+    cbName.textContent = 'No one yet';
+    cbSub.textContent = 'Add someone to begin';
+    cbTimer.classList.add('hidden');
+    btnStart.textContent = '▶ Start';
+  }else{
+    const t = TYPES[state.current.type];
+    const rem = getRemaining();
+    cbBlock.classList.remove('empty');
+    cbName.textContent = state.current.name;
+    cbSub.textContent = t.label + ' · ' + timeLabel(t.time);
+    cbTimer.classList.remove('hidden');
+    cbTimer.textContent = fmt(rem);
+    cbTimer.classList.toggle('urgent', rem <= 10 && rem > 0);
+    btnStart.textContent = state.current.running ? '⏸ Pause' : (rem < state.current.totalSecs && rem > 0 ? '▶ Resume' : rem <= 0 ? '▶ Start Again' : '▶ Start');
+  }
+
+  $('qCount').textContent = '(' + state.queue.length + ')';
+  const list = $('queueList');
+  list.querySelectorAll('.q-item').forEach(e => e.remove());
+  $('emptyMsg').style.display = state.queue.length ? 'none' : 'block';
+
+  state.queue.forEach((p,i) => {
+    const t = TYPES[p.type];
+    const item = document.createElement('div');
+    item.className = 'q-item';
+    item.innerHTML =
+      '<div class="q-num">' + (i+1) + '</div>' +
+      '<div class="q-name"></div>' +
+      '<span class="type-badge ' + t.badgeClass + '" style="font-size:9px;padding:2px 7px;">' + t.label + '</span>' +
+      '<button class="q-remove" onclick="removeFromQueue(' + i + ')">×</button>';
+    item.querySelector('.q-name').textContent = p.name;
+    list.appendChild(item);
+  });
+}
+
+function formatSubtitle(text){
+  const safe = escapeHtml(text);
+  if(safe.includes(' to ')){
+    return safe.replace(' to ', '<span style="display:block;text-align:center;">to ');
+  }
+  return safe;
+}
+
+function fmt(s){
+  s = Math.max(0, Number(s) || 0);
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+
+function timeLabel(s){
+  return s < 60 ? s + ' sec' : Math.round(s/60) + ' min';
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+document.addEventListener('keydown', e => {
+  if(document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if(e.code === 'Space'){ e.preventDefault(); startStop(); }
+  if(e.code === 'Enter'){ e.preventDefault(); markDone(); }
+  if(e.code === 'KeyR'){ e.preventDefault(); resetTimer(); }
+});
+
+$('nameInput')?.addEventListener('keydown', e => {
+  if(e.key === 'Enter') addPerson();
+});
+
+$('idleTitleInput')?.addEventListener('input', () => {
+  state.idleTitle = $('idleTitleInput').value;
+  saveState();
+  renderAll();
+});
+
+$('idleSubtitleInput')?.addEventListener('input', () => {
+  state.idleSubtitle = $('idleSubtitleInput').value;
+  saveState();
+  renderAll();
+});
+
+initBroadcast();
+loadState();
+hydratePanelInputs();
+renderAll();
+manageOverlayTick();
+</script>
+</body>
+</html>
