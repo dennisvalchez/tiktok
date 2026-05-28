@@ -25,9 +25,9 @@ body { font-family:'DM Sans',sans-serif; min-height:100vh; }
 /* ══ OVERLAY (viewer) ══ */
 #overlay {
   position:fixed;
-  bottom:30px;
-  right:30px;
-  width:520px;
+  bottom:80px;
+  right:40px;
+  width:620px;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -68,7 +68,18 @@ body { font-family:'DM Sans',sans-serif; min-height:100vh; }
   font-family:'Cormorant Garamond',serif; font-size:80px; font-weight:700;
   color:var(--black); letter-spacing:2px; line-height:1; min-width:180px;
 }
-.timer-display.urgent { color:#dc2626; }
+
+.timer-display.urgent {
+  color:#dc2626;
+  animation:pulseUrgent 1s infinite;
+}
+
+@keyframes pulseUrgent {
+  0% { transform:scale(1); opacity:1; }
+  50% { transform:scale(1.06); opacity:0.7; }
+  100% { transform:scale(1); opacity:1; }
+}
+
 .timer-display.hidden { display:none; }
 
 .yn-text {
@@ -344,6 +355,11 @@ body.overlay-mode #syncDotOverlay {
     <span class="upnext-name" id="ovUpnextName"></span>
     <span class="upnext-badge" id="ovUpnextBadge"></span>
   </div>
+
+  <div class="card-upnext" id="queueCounterCard" style="padding:10px 18px;">
+    <span class="upnext-label">Queue</span>
+    <span class="upnext-name" id="queueCounterText">0 People Waiting</span>
+  </div>
 </div>
 <div id="syncDotOverlay"></div>
 
@@ -369,9 +385,9 @@ body.overlay-mode #syncDotOverlay {
       <input class="name-input" id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off"/>
       <div class="col-label">Reading type</div>
       <div class="type-grid" id="typeGrid">
-        <div class="type-option selected" data-type="yn"   onclick="selectType(this)"><div class="to-name">Yes / No</div><div class="to-time">No timer</div></div>
-        <div class="type-option"          data-type="q"    onclick="selectType(this)"><div class="to-name">Question</div><div class="to-time">No timer</div></div>
-        <div class="type-option"          data-type="guid" onclick="selectType(this)"><div class="to-name">Guidance</div><div class="to-time">No timer</div></div>
+        <div class="type-option selected" data-type="yn"   onclick="selectType(this)"><div class="to-name">Yes / No</div><div class="to-time">10 sec</div></div>
+        <div class="type-option"          data-type="q"    onclick="selectType(this)"><div class="to-name">Question</div><div class="to-time">20 sec</div></div>
+        <div class="type-option"          data-type="guid" onclick="selectType(this)"><div class="to-name">Guidance</div><div class="to-time">20 sec</div></div>
         <div class="type-option"          data-type="mini" onclick="selectType(this)"><div class="to-name">Mini Reading</div><div class="to-time">1 min</div></div>
         <div class="type-option"          data-type="med"  onclick="selectType(this)"><div class="to-name">Mediumship</div><div class="to-time">3 min</div></div>
         <div class="type-option"          data-type="deep" onclick="selectType(this)"><div class="to-name">In-Depth Read</div><div class="to-time">5 min</div></div>
@@ -436,9 +452,9 @@ const API_KEY   = 'VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV';
 const CHANNEL_ID = 'dennisvalchez-reading-queue-v1'; // unique to you
 
 const TYPES = {
-  yn:   { label:'Y / N',      badgeClass:'badge-yn',   time:0   },
-  q:    { label:'Question',   badgeClass:'badge-q',    time:0   },
-  guid: { label:'Guidance',   badgeClass:'badge-guid', time:0   },
+  yn:   { label:'YES / NO', badgeClass:'badge-yn',   time:10 },
+  q:    { label:'QUESTION', badgeClass:'badge-q',    time:20 },
+  guid: { label:'GUIDANCE', badgeClass:'badge-guid', time:20 },
   mini: { label:'Mini Read',  badgeClass:'badge-mini', time:60  },
   med:  { label:'Mediumship', badgeClass:'badge-med',  time:180 },
   deep: { label:'In-Depth',   badgeClass:'badge-deep', time:300 },
@@ -729,6 +745,7 @@ function renderOverlay() {
     ovYN.textContent = 'Waiting for queue';
     ovBarWrap.classList.remove('visible');
     renderUpnext();
+  updateQueueCounter();
     return;
   }
   cardCurrent.classList.remove('hidden');
@@ -753,9 +770,27 @@ function renderOverlay() {
     ovYN.textContent = t.label;
   }
   renderUpnext();
+  updateQueueCounter();
+}
+
+
+function updateQueueCounter() {
+  const el = document.getElementById('queueCounterText');
+  if (!el) return;
+
+  const count = queue.length;
+
+  if (count === 0) {
+    el.textContent = 'No one waiting';
+  } else if (count === 1) {
+    el.textContent = '1 Person Waiting';
+  } else {
+    el.textContent = count + ' People Waiting';
+  }
 }
 
 function renderUpnext() {
+
   const cardUpnext    = document.getElementById('cardUpnext');
   const ovUpnextName  = document.getElementById('ovUpnextName');
   const ovUpnextBadge = document.getElementById('ovUpnextBadge');
