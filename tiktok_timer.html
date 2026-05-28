@@ -440,7 +440,12 @@ function connectWS() {
 
   ws.onopen = () => {
     setSyncStatus(true);
-    if (isLeader) broadcastState(); // push current state when reconnecting
+
+    if (isLeader) {
+      broadcastState();
+    } else {
+      requestState(); // overlay asks for state only AFTER websocket is connected
+    }
   };
 
   ws.onclose = () => {
@@ -693,8 +698,16 @@ function renderOverlay() {
   const ovBar       = document.getElementById('ovBar');
 
   if (!current) {
-    cardCurrent.classList.add('hidden');
-    renderUpnext(); return;
+    cardCurrent.classList.remove('hidden');
+    ovName.textContent = 'CONNECTED';
+    ovBadge.textContent = 'WAITING';
+    ovBadge.className = 'type-badge badge-q';
+    ovTimer.classList.add('hidden');
+    ovYN.classList.remove('hidden');
+    ovYN.textContent = 'Waiting for queue';
+    ovBarWrap.classList.remove('visible');
+    renderUpnext();
+    return;
   }
   cardCurrent.classList.remove('hidden');
   ovName.textContent = current.name;
@@ -947,8 +960,7 @@ document.getElementById('nameInput')?.addEventListener('keydown', e => {
 
 // ══ INIT ══
 connectWS();
-// Overlay: request state after connection
-if (isOverlay) setTimeout(requestState, 1200);
+// Overlay now requests state inside ws.onopen
 renderCurrent();
 renderQueue();
 renderOverlay();
