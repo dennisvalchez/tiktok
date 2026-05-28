@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Live Timer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Outfit', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── CONTROL PANEL (hidden when ?overlay=1) ── */
+  #control-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .cp-label {
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-right: 4px;
+  }
+
+  .time-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .time-btn:hover { background: rgba(255,77,109,0.3); border-color: #ff4d6d; }
+  .time-btn.active { background: #ff4d6d; border-color: #ff4d6d; }
+
+  .divider {
+    width: 1px; height: 28px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .start-btn {
+    background: linear-gradient(135deg, #ff4d6d, #ff9a3c);
+    border: none;
+    color: white;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 13px;
+    padding: 8px 22px;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .start-btn:hover { transform: scale(1.05); opacity: 0.9; }
+  .start-btn:active { transform: scale(0.97); }
+
+  .reset-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { color: white; border-color: rgba(255,255,255,0.4); }
+
+  /* ── TIMER WIDGET ── */
+  #timer-widget {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+    user-select: none;
+    margin-bottom: 100px;
+  }
+
+  .tiktok-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tiktok-logo span { color: #ff4d6d; }
+
+  .timer-ring-wrap {
+    position: relative;
+    width: 220px;
+    height: 220px;
+  }
+
+  .timer-ring-bg {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+  }
+
+  /* SVG ring */
+  .progress-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+  .progress-track {
+    fill: none;
+    stroke: rgba(255,255,255,0.07);
+    stroke-width: 6;
+  }
+  .progress-fill {
+    fill: none;
+    stroke: url(#timerGrad);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s linear;
+  }
+  .progress-fill.urgent { stroke: url(#urgentGrad); }
+
+  .timer-inner {
+    position: absolute; inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .timer-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 68px;
+    color: white;
+    line-height: 1;
+    letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(255,77,109,0.4);
+    transition: color 0.3s;
+  }
+  .timer-display.urgent {
+    color: #ff4d6d;
+    text-shadow: 0 0 40px rgba(255,77,109,0.8);
+    animation: urgentPulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes urgentPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.04); }
+  }
+
+  .timer-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    color: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.07);
+    margin-top: 12px;
+    transition: all 0.3s;
+  }
+  .status-badge.running {
+    color: #4dffb3;
+    background: rgba(77,255,179,0.12);
+    box-shadow: 0 0 12px rgba(77,255,179,0.2);
+  }
+  .status-badge.done {
+    color: #ffcc44;
+    background: rgba(255,204,68,0.15);
+    box-shadow: 0 0 12px rgba(255,204,68,0.3);
+  }
+
+  /* ── CONFETTI ── */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -20px;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+    z-index: 9999;
+    border-radius: 2px;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg) translateX(var(--drift)); opacity: 0; }
+  }
+
+  /* ── BELL RING ANIMATION ── */
+  @keyframes bellRing {
+    0%,100% { transform: rotate(0deg); }
+    15% { transform: rotate(-20deg); }
+    30% { transform: rotate(20deg); }
+    45% { transform: rotate(-15deg); }
+    60% { transform: rotate(15deg); }
+    75% { transform: rotate(-5deg); }
+  }
+  .bell-icon { display: inline-block; font-size: 18px; }
+  .bell-icon.ringing { animation: bellRing 0.6s ease-in-out; }
+
+  /* ── HIDE PANEL WHEN OVERLAY MODE ── */
+  body.overlay-mode #control-panel { display: none !important; }
+  body.overlay-mode #timer-widget { margin-bottom: 0; }
+  body.overlay-mode { background: transparent !important; }
+</style>
+</head>
+<body>
+
+<!-- TIMER WIDGET -->
+<div id="timer-widget">
+  <div class="tiktok-logo">
+    <span class="bell-icon" id="bellIcon">🔔</span>
+    LIVE <span>TIMER</span>
+  </div>
+
+  <div class="timer-ring-wrap">
+    <div class="timer-ring-bg"></div>
+    <svg class="progress-svg" viewBox="0 0 220 220">
+      <defs>
+        <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#ff4d6d"/>
+          <stop offset="100%" stop-color="#ff9a3c"/>
+        </linearGradient>
+        <linearGradient id="urgentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#ff4d6d"/>
+          <stop offset="100%" stop-color="#ff0044"/>
+        </linearGradient>
+      </defs>
+      <circle class="progress-track" cx="110" cy="110" r="100"/>
+      <circle class="progress-fill" id="progressRing" cx="110" cy="110" r="100"
+        stroke-dasharray="628.3"
+        stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-inner">
+      <div class="timer-display" id="timerDisplay">01:00</div>
+      <div class="timer-label">minutes · seconds</div>
+    </div>
+  </div>
+
+  <div class="status-badge" id="statusBadge">Ready</div>
+</div>
+
+<!-- CONTROL PANEL -->
+<div id="control-panel">
+  <span class="cp-label">Set time</span>
+  <button class="time-btn active" id="btn1" onclick="setDuration(1)">1 MIN</button>
+  <button class="time-btn" id="btn3" onclick="setDuration(3)">3 MIN</button>
+  <button class="time-btn" id="btn5" onclick="setDuration(5)">5 MIN</button>
+  <div class="divider"></div>
+  <button class="start-btn" id="startBtn" onclick="startTimer()">▶ START</button>
+  <button class="reset-btn" onclick="resetTimer()">↺ RESET</button>
+</div>
+
+<!-- AUDIO CONTEXT for bell sound -->
+<script>
+  // ── STATE ──
+  let totalSeconds = 60;
+  let remaining = 60;
+  let interval = null;
+  let running = false;
+
+  const display = document.getElementById('timerDisplay');
+  const ring = document.getElementById('progressRing');
+  const badge = document.getElementById('statusBadge');
+  const bell = document.getElementById('bellIcon');
+  const startBtn = document.getElementById('startBtn');
+  const CIRCUMFERENCE = 628.3;
+
+  // Check overlay mode from URL ?overlay=1
+  if (new URLSearchParams(location.search).get('overlay') === '1') {
+    document.body.classList.add('overlay-mode');
+  }
+
+  // ── BELL SOUND via Web Audio API ──
+  function playBell() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Master volume — quiet & gentle
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.13, ctx.currentTime);
+    master.connect(ctx.destination);
+
+    // Soft reverb via convolver (impulse response)
+    const convolver = ctx.createConvolver();
+    const irLen = ctx.sampleRate * 1.2;
+    const ir = ctx.createBuffer(2, irLen, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = ir.getChannelData(ch);
+      for (let i = 0; i < irLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / irLen, 3);
+    }
+    convolver.buffer = ir;
+    convolver.connect(master);
+
+    // Warm bell partials: fundamental + harmonics, all sine, gentle decay
+    // [frequency, relative_vol, decay_seconds]
+    const partials = [
+      [660,  1.0,  2.8],   // fundamental — warm G5
+      [1320, 0.45, 2.2],   // octave
+      [1980, 0.18, 1.6],   // 3rd partial
+      [2640, 0.08, 1.0],   // 4th partial (airy shimmer)
+    ];
+
+    partials.forEach(([freq, vol, decay]) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      // Soft attack, smooth exponential tail
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + decay);
+      osc.connect(gain);
+      gain.connect(convolver);
+      gain.connect(master); // dry path too
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + decay + 0.1);
+    });
+    // Animate bell icon
+    bell.classList.remove('ringing');
+    void bell.offsetWidth;
+    bell.classList.add('ringing');
+    setTimeout(() => bell.classList.remove('ringing'), 700);
+  }
+
+  // ── CONFETTI ──
+  function launchConfetti() {
+    const colors = ['#ff4d6d','#ff9a3c','#ffcc44','#4dffb3','#4db8ff','#d44dff','#ffffff'];
+    for (let i = 0; i < 120; i++) {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (Math.random() * 8 + 6) + 'px';
+        el.style.height = (Math.random() * 8 + 6) + 'px';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        const duration = Math.random() * 2 + 2;
+        el.style.animationDuration = duration + 's';
+        el.style.setProperty('--drift', (Math.random() * 200 - 100) + 'px');
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), duration * 1000 + 500);
+      }, Math.random() * 800);
+    }
+  }
+
+  // ── HELPERS ──
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function updateRing() {
+    const pct = remaining / totalSeconds;
+    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+  }
+
+  function setUrgent(yes) {
+    display.classList.toggle('urgent', yes);
+    ring.classList.toggle('urgent', yes);
+  }
+
+  // ── ACTIONS ──
+  function setDuration(mins) {
+    if (running) return;
+    totalSeconds = mins * 60;
+    remaining = totalSeconds;
+    display.textContent = fmt(remaining);
+    updateRing();
+    setUrgent(false);
+    badge.textContent = 'Ready';
+    badge.className = 'status-badge';
+    ['btn1','btn3','btn5'].forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById('btn' + mins).classList.add('active');
+  }
+
+  function startTimer() {
+    if (running) {
+      // Pause
+      clearInterval(interval);
+      running = false;
+      startBtn.textContent = '▶ RESUME';
+      badge.textContent = 'Paused';
+      badge.className = 'status-badge';
+      return;
+    }
+    if (remaining <= 0) { resetTimer(); return; }
+
+    // Play bell on start
+    playBell();
+    running = true;
+    startBtn.textContent = '⏸ PAUSE';
+    badge.textContent = 'Live';
+    badge.className = 'status-badge running';
+
+    interval = setInterval(() => {
+      remaining--;
+      display.textContent = fmt(remaining);
+      updateRing();
+      setUrgent(remaining <= 10 && remaining > 0);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        running = false;
+        display.textContent = '00:00';
+        badge.textContent = '🎉 Done!';
+        badge.className = 'status-badge done';
+        startBtn.textContent = '▶ START';
+        setUrgent(false);
+        playBell();
+        launchConfetti();
+      }
+    }, 1000);
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    remaining = totalSeconds;
+    display.textContent = fmt(remaining);
+    updateRing();
+    setUrgent(false);
+    badge.textContent = 'Ready';
+    badge.className = 'status-badge';
+    startBtn.textContent = '▶ START';
+  }
+
+  // ── KEYBOARD SHORTCUT: SPACEBAR to start/pause ──
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); startTimer(); }
+    if (e.code === 'KeyR') resetTimer();
+    if (e.code === 'Digit1') setDuration(1);
+    if (e.code === 'Digit3') setDuration(3);
+    if (e.code === 'Digit5') setDuration(5);
+  });
+
+  // Init display
+  display.textContent = fmt(remaining);
+  updateRing();
+</script>
+</body>
+</html>
