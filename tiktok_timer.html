@@ -3,847 +3,352 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dennis Valchez Reading Queue</title>
+<title>Dennis Valchez Premium Simple Timer V2</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;700;900&display=swap');
 
-:root{
-  --black:#0a0a0a;
-  --bg:#f0ede8;
-  --border:rgba(0,0,0,.15);
-  --shadow:0 2px 20px rgba(0,0,0,.14), 0 0 0 1.5px rgba(0,0,0,.08);
-}
+* { margin:0; padding:0; box-sizing:border-box; }
 
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:transparent!important;
-  font-family:"DM Sans",Arial,sans-serif;
-}
-
-/*
-  IMPORTANT:
-  TikTok Live Studio Link Source can use different internal resolutions.
-  This fixed stage is auto-scaled with JS, so the layout never overlaps.
-*/
-#stage{
-  width:1280px;
-  height:720px;
-  position:absolute;
-  left:0;
-  top:0;
-  transform-origin:top left;
-  background:transparent;
+body {
+  background:transparent !important;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  font-family:'DM Sans', sans-serif;
   overflow:hidden;
 }
 
-/* Viewer window — crop this area in TikTok Studio */
-#viewer{
-  position:absolute;
-  left:34px;
-  top:34px;
-  width:560px;
-  pointer-events:none;
-  z-index:10;
+#timer-widget {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  margin-bottom:130px;
+  user-select:none;
 }
 
-.viewer-card{
+.card {
   width:560px;
   background:#fff;
-  border:2px solid var(--border);
-  border-radius:22px;
-  box-shadow:var(--shadow);
-  padding:22px 26px 20px;
-  overflow:hidden;
-  position:relative;
+  border:2px solid rgba(0,0,0,0.15);
+  border-radius:24px;
+  box-shadow:0 2px 20px rgba(0,0,0,0.14), 0 0 0 1.5px rgba(0,0,0,0.08);
+  padding:24px 28px 22px;
+  text-align:center;
 }
 
-.viewer-top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:14px;
-}
-
-#viewerName{
-  font-family:"Cormorant Garamond",Georgia,serif;
+.title {
+  font-family:'Cormorant Garamond', serif;
   font-size:52px;
   font-weight:700;
   line-height:1;
-  color:var(--black);
-  flex:1;
-  min-width:0;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  color:#0a0a0a;
 }
 
-#viewerName.idle{
-  white-space:normal;
-  font-size:50px;
-  line-height:1;
-  text-align:center;
-  width:100%;
-}
-
-.badge{
-  font-size:15px;
-  font-weight:700;
-  letter-spacing:.45px;
-  text-transform:uppercase;
-  padding:6px 13px;
-  border-radius:10px;
-  border:2px solid currentColor;
-  white-space:nowrap;
-}
-
-.badge-yn{color:#555;border-color:#ccc;background:#f5f5f5}
-.badge-q{color:#2563eb;border-color:#bfdbfe;background:#eff6ff}
-.badge-guid{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff}
-.badge-mini{color:#059669;border-color:#a7f3d0;background:#ecfdf5}
-.badge-med{color:#d97706;border-color:#fde68a;background:#fffbeb}
-.badge-deep{color:#dc2626;border-color:#fecaca;background:#fef2f2}
-
-.divider{
-  height:2px;
-  background:var(--border);
-  margin:12px 0;
-}
-
-.timer-row{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:14px;
-}
-
-#viewerTimer{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:82px;
-  font-weight:700;
-  line-height:1;
-  letter-spacing:2px;
-  color:var(--black);
-  min-width:190px;
-  text-align:center;
-}
-
-#viewerTimer.urgent{
-  color:#dc2626;
-  animation:pulseUrgent 1s infinite;
-}
-
-@keyframes pulseUrgent{
-  0%,100%{transform:scale(1);opacity:1}
-  50%{transform:scale(1.06);opacity:.72}
-}
-
-#viewerSubtitle{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:32px;
+.subtitle {
+  font-family:'Cormorant Garamond', serif;
+  font-size:29px;
   font-weight:600;
-  line-height:1.12;
-  text-align:center;
-  width:100%;
-  color:var(--black);
+  line-height:1.15;
+  color:#0a0a0a;
+  margin-top:6px;
 }
 
-.bar-wrap{
-  height:7px;
-  background:rgba(0,0,0,.08);
-  border-radius:10px;
-  overflow:hidden;
-  margin-top:14px;
-  display:none;
+.divider {
+  height:2px;
+  background:rgba(0,0,0,0.15);
+  margin:15px 0;
 }
 
-#bar{
-  height:100%;
-  width:100%;
-  background:var(--black);
-  border-radius:10px;
-  transition:width .35s linear;
+.badge {
+  display:inline-block;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  padding:7px 15px;
+  border-radius:12px;
+  border:2px solid currentColor;
+  margin-bottom:12px;
 }
 
-#bar.urgent{background:#dc2626}
-
-.info-card{
-  width:560px;
-  background:#fff;
-  border:2px solid var(--border);
-  border-radius:16px;
-  box-shadow:0 1px 8px rgba(0,0,0,.08);
-  padding:11px 18px;
-  margin-top:10px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
-
-#upNextCard{display:none}
-
-.label{
-  font-size:13px;
+.timer {
+  font-family:'Cormorant Garamond', serif;
+  font-size:92px;
   font-weight:700;
+  line-height:.95;
+  letter-spacing:2px;
+  color:#0a0a0a;
+}
+
+.timer.urgent {
+  color:#dc2626;
+  animation:pulse .6s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  from { transform:scale(1); }
+  to { transform:scale(1.04); }
+}
+
+.status {
+  font-size:13px;
+  font-weight:900;
   letter-spacing:1px;
   text-transform:uppercase;
-  color:rgba(0,0,0,.38);
-  white-space:nowrap;
+  color:rgba(0,0,0,0.42);
+  margin-top:12px;
 }
 
-#upNextName,#queueText{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:27px;
-  font-weight:700;
-  color:var(--black);
-  flex:1;
-  min-width:0;
+.bar-wrap {
+  height:8px;
+  background:rgba(0,0,0,0.08);
+  border-radius:8px;
   overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  margin-top:16px;
 }
-
-/* Control panel */
-#panel{
-  position:absolute;
-  left:630px;
-  top:34px;
-  width:610px;
-  height:652px;
-  background:var(--bg);
-  border-radius:22px;
-  overflow:hidden;
-  box-shadow:0 10px 40px rgba(0,0,0,.18);
-  display:flex;
-  flex-direction:column;
-  z-index:1;
-}
-
-.panel-header{
-  background:#fff;
-  padding:14px 18px;
-  border-bottom:1px solid #ddd;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-shrink:0;
-}
-
-.panel-title{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:25px;
-  font-weight:700;
-  color:var(--black);
-}
-
-.panel-ready{
-  font-size:12px;
-  color:#999;
-  font-weight:700;
-}
-
-.panel-body{
-  flex:1;
-  display:flex;
-  min-height:0;
-}
-
-.add-col{
-  width:260px;
-  background:#fff;
-  border-right:1px solid #ddd;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  overflow:auto;
-}
-
-.small-label{
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:1.5px;
-  text-transform:uppercase;
-  color:rgba(0,0,0,.4);
-}
-
-#nameInput{
+.bar {
+  height:100%;
   width:100%;
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  padding:10px 14px;
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:20px;
-  font-weight:700;
-  outline:none;
-  background:#fafafa;
-  color:var(--black);
+  background:#0a0a0a;
+  border-radius:8px;
+  transition:width .35s linear;
 }
+.bar.urgent { background:#dc2626; }
 
-#nameInput:focus{background:#fff;border-color:#aaa}
-#nameInput::placeholder{color:#bbb;font-style:italic}
-
-.type-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:7px;
-}
-
-.type-option{
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  padding:9px 8px;
-  background:#fafafa;
-  cursor:pointer;
-  user-select:none;
-}
-
-.type-option:hover{background:#f0f0f0;border-color:#bbb}
-.type-option.selected{
-  background:var(--black);
-  border-color:var(--black);
-  color:#fff;
-}
-
-.type-name{font-size:12px;font-weight:700;line-height:1}
-.type-time{font-size:10px;opacity:.55;margin-top:4px}
-
-button{
-  font-family:"DM Sans",Arial,sans-serif;
-  cursor:pointer;
-  user-select:none;
-}
-
-.add-btn{
-  background:var(--black);
-  color:#fff;
-  border:0;
-  border-radius:10px;
-  padding:12px;
-  font-weight:700;
-  font-size:14px;
-}
-
-.add-btn:hover,.start-btn:hover{opacity:.78}
-
-.queue-col{
-  flex:1;
-  padding:16px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  min-width:0;
-}
-
-.current-block{
-  background:#fff;
-  border:1.5px solid #ddd;
-  border-radius:14px;
-  padding:14px;
+#control-panel {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(255,255,255,0.96);
+  border:2px solid rgba(0,0,0,0.14);
+  border-radius:20px;
+  padding:14px 18px;
   display:flex;
   align-items:center;
-  gap:12px;
-  flex-shrink:0;
+  gap:9px;
+  z-index:1000;
+  box-shadow:0 8px 28px rgba(0,0,0,0.14);
+  flex-wrap:wrap;
+  justify-content:center;
+  max-width:96vw;
 }
 
-.current-info{flex:1;min-width:0}
-
-#currentName{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:24px;
-  font-weight:700;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  color:var(--black);
-}
-
-#currentSub{
-  font-size:12px;
-  color:#999;
-  margin-top:2px;
-}
-
-#currentTimer{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:34px;
-  font-weight:700;
-  min-width:82px;
-  text-align:center;
-  color:var(--black);
-}
-
-#currentTimer.urgent{color:#dc2626}
-
-.btns{
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-}
-
-.start-btn{
-  background:var(--black);
-  color:#fff;
-  border:0;
-  border-radius:8px;
-  padding:9px 14px;
-  font-weight:700;
-  min-width:92px;
-}
-
-.next-btn{
-  background:#eee;
-  color:#555;
-  border:1px solid #ddd;
-  border-radius:8px;
-  padding:8px 14px;
-  font-weight:700;
-}
-
-.queue-list{
-  flex:1;
-  overflow:auto;
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-  min-height:0;
-}
-
-.q-item{
-  background:#fff;
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  padding:10px 12px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  flex-shrink:0;
-}
-
-.q-num{
+.cp-label {
+  color:rgba(0,0,0,0.42);
   font-size:11px;
-  font-weight:700;
-  color:#bbb;
-  min-width:18px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:1px;
 }
 
-.q-name{
-  font-family:"Cormorant Garamond",Georgia,serif;
-  font-size:19px;
-  font-weight:700;
-  flex:1;
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  color:var(--black);
-}
-
-.remove-btn{
-  background:none;
-  border:0;
-  color:#bbb;
+.title-input {
+  background:#fafafa;
+  border:1.5px solid #ddd;
+  color:#0a0a0a;
+  border-radius:10px;
+  padding:8px 12px;
+  font-family:'Cormorant Garamond', serif;
   font-size:18px;
-  padding:0 4px;
+  font-weight:700;
+  width:150px;
+  outline:none;
 }
 
-.remove-btn:hover{color:#dc2626}
+.time-btn {
+  background:#fafafa;
+  border:1.5px solid #ddd;
+  color:#0a0a0a;
+  font-family:'DM Sans', sans-serif;
+  font-weight:900;
+  font-size:12px;
+  padding:7px 12px;
+  border-radius:10px;
+  cursor:pointer;
+}
+.time-btn.active {
+  background:#0a0a0a;
+  color:#fff;
+  border-color:#0a0a0a;
+}
 
-.empty{
-  color:#aaa;
-  text-align:center;
-  padding:30px 10px;
+.start-btn {
+  background:#0a0a0a;
+  border:none;
+  color:white;
+  font-family:'DM Sans', sans-serif;
+  font-weight:900;
   font-size:13px;
-  font-style:italic;
+  padding:9px 22px;
+  border-radius:12px;
+  cursor:pointer;
+  text-transform:uppercase;
 }
 
-.confetti{
-  position:absolute;
-  pointer-events:none;
-  z-index:999999;
-  border-radius:3px;
-  animation:confettiFall linear forwards;
+.reset-btn {
+  background:#eee;
+  border:1px solid #ddd;
+  color:#555;
+  font-family:'DM Sans', sans-serif;
+  font-weight:900;
+  font-size:12px;
+  padding:8px 14px;
+  border-radius:10px;
+  cursor:pointer;
 }
 
-@keyframes confettiFall{
-  0%{transform:translateY(0) rotate(0deg) translateX(0);opacity:1}
-  85%{opacity:1}
-  100%{transform:translateY(var(--fall)) rotate(720deg) translateX(var(--drift));opacity:0}
-}
-
-/* Emergency responsive fallback if JS scaling is blocked */
-@media (max-width:900px){
-  #stage{transform:scale(.7);transform-origin:top left}
-}
+body.overlay-mode #control-panel { display:none !important; }
+body.overlay-mode #timer-widget { margin-bottom:0; }
 </style>
 </head>
 <body>
-<div id="stage">
-  <div id="viewer">
-    <div class="viewer-card" id="viewerCard">
-      <div class="viewer-top">
-        <div id="viewerName">Ask Psychic Medium</div>
-        <div class="badge badge-q" id="viewerBadge">LIVE</div>
-      </div>
-      <div class="divider"></div>
-      <div class="timer-row">
-        <div id="viewerTimer" style="display:none;">00:00</div>
-        <div id="viewerSubtitle">Check "Viewer Wishlist"<br>to join the queue</div>
-      </div>
-      <div class="bar-wrap" id="barWrap">
-        <div id="bar"></div>
-      </div>
-    </div>
 
-    <div class="info-card" id="upNextCard">
-      <span class="label">Up next</span>
-      <span id="upNextName"></span>
-      <span class="badge" id="upNextBadge"></span>
-    </div>
-
-    <div class="info-card">
-      <span class="label">Queue</span>
-      <span id="queueText">No one waiting</span>
-    </div>
-  </div>
-
-  <div id="panel">
-    <div class="panel-header">
-      <div class="panel-title">✦ Reading Queue</div>
-      <div class="panel-ready">READY</div>
-    </div>
-
-    <div class="panel-body">
-      <div class="add-col">
-        <div class="small-label">Add to queue</div>
-        <input id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off">
-
-        <div class="small-label">Reading type</div>
-        <div class="type-grid">
-          <div class="type-option selected" data-type="yn" onclick="selectType(this)">
-            <div class="type-name">Yes / No</div><div class="type-time">10 sec</div>
-          </div>
-          <div class="type-option" data-type="q" onclick="selectType(this)">
-            <div class="type-name">Question</div><div class="type-time">20 sec</div>
-          </div>
-          <div class="type-option" data-type="guid" onclick="selectType(this)">
-            <div class="type-name">Guidance</div><div class="type-time">20 sec</div>
-          </div>
-          <div class="type-option" data-type="mini" onclick="selectType(this)">
-            <div class="type-name">Mini Reading</div><div class="type-time">1 min</div>
-          </div>
-          <div class="type-option" data-type="med" onclick="selectType(this)">
-            <div class="type-name">Mediumship</div><div class="type-time">3 min</div>
-          </div>
-          <div class="type-option" data-type="deep" onclick="selectType(this)">
-            <div class="type-name">In-Depth</div><div class="type-time">5 min</div>
-          </div>
-        </div>
-
-        <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
-      </div>
-
-      <div class="queue-col">
-        <div class="small-label">Now reading</div>
-        <div class="current-block">
-          <div class="current-info">
-            <div id="currentName">No one yet</div>
-            <div id="currentSub">Add someone to begin</div>
-          </div>
-          <div id="currentTimer" style="display:none;">00:00</div>
-          <div class="btns">
-            <button class="start-btn" id="startBtn" onclick="startStop()">▶ Start</button>
-            <button class="next-btn" onclick="nextPerson()">✓ Done / Next</button>
-          </div>
-        </div>
-
-        <div class="small-label">Queue <span id="qCount">(0)</span></div>
-        <div class="queue-list" id="queueList">
-          <div class="empty" id="emptyQueue">No one in queue yet</div>
-        </div>
-      </div>
-    </div>
+<div id="timer-widget">
+  <div class="card">
+    <div class="title" id="title">Ask Psychic Medium</div>
+    <div class="subtitle" id="subtitle">Check "Viewer Wishlist"<br>to join the queue</div>
+    <div class="divider"></div>
+    <div class="badge" id="badge">YES / NO</div>
+    <div class="timer" id="timer">00:10</div>
+    <div class="status" id="status">Ready</div>
+    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
   </div>
 </div>
 
-<script>
-(function(){
-"use strict";
+<div id="control-panel">
+  <span class="cp-label">Title</span>
+  <input class="title-input" id="titleInput" placeholder="Name/title">
 
+  <button class="time-btn active" id="btn-yn" onclick="setType('yn')">YES/NO</button>
+  <button class="time-btn" id="btn-q" onclick="setType('q')">QUESTION</button>
+  <button class="time-btn" id="btn-guid" onclick="setType('guid')">GUIDANCE</button>
+  <button class="time-btn" id="btn-mini" onclick="setType('mini')">MINI</button>
+  <button class="time-btn" id="btn-med" onclick="setType('med')">MEDIUM</button>
+  <button class="time-btn" id="btn-deep" onclick="setType('deep')">DEEP</button>
+
+  <button class="start-btn" id="startBtn" onclick="startTimer()">▶ START</button>
+  <button class="reset-btn" onclick="resetTimer()">↺ RESET</button>
+</div>
+
+<script>
+let type = 'yn';
 const TYPES = {
-  yn:   { label:"YES / NO",   badgeClass:"badge-yn",   time:10 },
-  q:    { label:"QUESTION",   badgeClass:"badge-q",    time:20 },
-  guid: { label:"GUIDANCE",   badgeClass:"badge-guid", time:20 },
-  mini: { label:"MINI READ",  badgeClass:"badge-mini", time:60 },
-  med:  { label:"MEDIUMSHIP", badgeClass:"badge-med",  time:180 },
-  deep: { label:"IN-DEPTH",   badgeClass:"badge-deep", time:300 }
+  yn:   { label:'YES / NO', time:10, color:'#555', border:'#ccc', bg:'#f5f5f5' },
+  q:    { label:'QUESTION', time:20, color:'#2563eb', border:'#bfdbfe', bg:'#eff6ff' },
+  guid: { label:'GUIDANCE', time:20, color:'#7c3aed', border:'#ddd6fe', bg:'#f5f3ff' },
+  mini: { label:'MINI READING', time:60, color:'#059669', border:'#a7f3d0', bg:'#ecfdf5' },
+  med:  { label:'MEDIUMSHIP', time:180, color:'#d97706', border:'#fde68a', bg:'#fffbeb' },
+  deep: { label:'IN-DEPTH READING', time:300, color:'#dc2626', border:'#fecaca', bg:'#fef2f2' }
 };
 
-let queue = [];
-let current = null;
-let selectedType = "yn";
-let timer = null;
-let scale = 1;
+let total = TYPES[type].time;
+let remaining = total;
+let running = false;
+let interval = null;
 
-/* Fixes TikTok Live Studio Link Source resolution differences */
-function fitStage(){
-  const stage = document.getElementById("stage");
-  const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-  scale = Math.min(vw / 1280, vh / 720);
-  if (!isFinite(scale) || scale <= 0) scale = 1;
-  stage.style.transform = "scale(" + scale + ")";
+if (new URLSearchParams(location.search).get('overlay') === '1') {
+  document.body.classList.add('overlay-mode');
 }
-window.addEventListener("resize", fitStage);
-fitStage();
 
 function $(id){ return document.getElementById(id); }
 
-window.selectType = function(el){
-  document.querySelectorAll(".type-option").forEach(x => x.classList.remove("selected"));
-  el.classList.add("selected");
-  selectedType = el.dataset.type;
-};
-
-window.addPerson = function(){
-  const input = $("nameInput");
-  const raw = input.value.trim();
-  if (!raw) { input.focus(); return; }
-
-  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
-  queue.push({ name, type:selectedType });
-  input.value = "";
-  input.focus();
-
-  if (!current) loadNext();
-  renderAll();
-};
-
-function loadNext(){
-  stopTimer();
-  if (!queue.length) {
-    current = null;
-  } else {
-    const p = queue.shift();
-    const t = TYPES[p.type];
-    current = {
-      name:p.name,
-      type:p.type,
-      total:t.time,
-      remaining:t.time,
-      running:false
-    };
-  }
-  renderAll();
+function fmt(s){
+  const m = Math.floor(s/60);
+  const sec = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
 }
 
-window.startStop = function(){
-  if (!current) return;
-
-  if (current.running) {
-    current.running = false;
-    stopTimer();
+function renderTitle(){
+  const custom = $('titleInput').value.trim();
+  if (custom) {
+    $('title').textContent = custom;
+    $('subtitle').textContent = TYPES[type].label;
   } else {
-    if (current.remaining <= 0) current.remaining = current.total;
-    current.running = true;
-    startTimer();
+    $('title').textContent = 'Ask Psychic Medium';
+    $('subtitle').innerHTML = 'Check "Viewer Wishlist"<br>to join the queue';
   }
-  renderAll();
-};
+}
+
+function render(){
+  const t = TYPES[type];
+  renderTitle();
+
+  $('badge').textContent = t.label;
+  $('badge').style.color = t.color;
+  $('badge').style.borderColor = t.border;
+  $('badge').style.background = t.bg;
+
+  $('timer').textContent = fmt(remaining);
+  $('timer').classList.toggle('urgent', remaining <= 10 && remaining > 0 && running);
+
+  const pct = total ? (remaining / total) * 100 : 0;
+  $('bar').style.width = pct + '%';
+  $('bar').classList.toggle('urgent', remaining <= 10 && remaining > 0);
+
+  if (running) {
+    $('status').textContent = 'Reading in progress';
+    $('startBtn').textContent = '⏸ PAUSE';
+  } else if (remaining <= 0) {
+    $('status').textContent = 'Reading complete — press Start';
+    $('startBtn').textContent = '▶ START AGAIN';
+  } else {
+    $('status').textContent = 'Ready';
+    $('startBtn').textContent = '▶ START';
+  }
+}
+
+function setType(newType){
+  if (running) return;
+  type = newType;
+  total = TYPES[type].time;
+  remaining = total;
+
+  document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
+  $('btn-' + newType).classList.add('active');
+
+  resetTimer(false);
+}
 
 function startTimer(){
-  stopTimer();
-  timer = setInterval(function(){
-    if (!current || !current.running) return;
-    current.remaining = Math.max(0, current.remaining - 1);
-    renderAll();
+  if (running) {
+    clearInterval(interval);
+    running = false;
+    render();
+    return;
+  }
 
-    if (current.remaining <= 0) {
-      current.running = false;
-      stopTimer();
-      launchConfetti();
-      renderAll();
+  if (remaining <= 0) remaining = total;
+  running = true;
+  render();
+
+  interval = setInterval(() => {
+    remaining = Math.max(0, remaining - 1);
+    render();
+
+    if (remaining <= 0) {
+      clearInterval(interval);
+      running = false;
+      render();
     }
   }, 1000);
 }
 
-function stopTimer(){
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
+function resetTimer(update=true){
+  clearInterval(interval);
+  running = false;
+  remaining = total;
+  render();
 }
 
-window.nextPerson = function(){
-  loadNext();
-};
+$('titleInput').addEventListener('input', render);
 
-window.removeFromQueue = function(i){
-  queue.splice(i, 1);
-  renderAll();
-};
-
-function fmt(s){
-  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
-}
-
-function renderAll(){
-  renderViewer();
-  renderPanel();
-  renderQueue();
-}
-
-function renderViewer(){
-  const viewerName = $("viewerName");
-  const viewerBadge = $("viewerBadge");
-  const viewerTimer = $("viewerTimer");
-  const viewerSubtitle = $("viewerSubtitle");
-  const barWrap = $("barWrap");
-  const bar = $("bar");
-
-  if (!current) {
-    viewerName.textContent = "Ask Psychic Medium";
-    viewerName.classList.add("idle");
-    viewerBadge.textContent = "LIVE";
-    viewerBadge.className = "badge badge-q";
-    viewerTimer.style.display = "none";
-    viewerTimer.classList.remove("urgent");
-    viewerSubtitle.style.display = "block";
-    viewerSubtitle.innerHTML = 'Check "Viewer Wishlist"<br>to join the queue';
-    barWrap.style.display = "none";
-  } else {
-    const t = TYPES[current.type];
-    viewerName.textContent = current.name;
-    viewerName.classList.remove("idle");
-    viewerBadge.textContent = t.label;
-    viewerBadge.className = "badge " + t.badgeClass;
-    viewerTimer.style.display = "block";
-    viewerTimer.textContent = fmt(current.remaining);
-    viewerTimer.classList.toggle("urgent", current.remaining <= 10 && current.remaining > 0);
-    viewerSubtitle.style.display = "none";
-    barWrap.style.display = "block";
-    const pct = current.total ? (current.remaining / current.total) * 100 : 0;
-    bar.style.width = pct + "%";
-    bar.classList.toggle("urgent", current.remaining <= 10);
-  }
-
-  const upNextCard = $("upNextCard");
-  if (queue.length) {
-    const next = queue[0];
-    const nt = TYPES[next.type];
-    upNextCard.style.display = "flex";
-    $("upNextName").textContent = next.name;
-    const b = $("upNextBadge");
-    b.textContent = nt.label;
-    b.className = "badge " + nt.badgeClass;
-  } else {
-    upNextCard.style.display = "none";
-  }
-
-  $("queueText").textContent =
-    queue.length === 0 ? "No one waiting" :
-    queue.length === 1 ? "1 Person Waiting" :
-    queue.length + " People Waiting";
-}
-
-function renderPanel(){
-  const name = $("currentName");
-  const sub = $("currentSub");
-  const ct = $("currentTimer");
-  const btn = $("startBtn");
-
-  if (!current) {
-    name.textContent = "No one yet";
-    sub.textContent = "Add someone to begin";
-    ct.style.display = "none";
-    ct.classList.remove("urgent");
-    btn.textContent = "▶ Start";
-  } else {
-    const t = TYPES[current.type];
-    name.textContent = current.name;
-    sub.textContent = t.label + " · " + t.time + " sec";
-    ct.style.display = "block";
-    ct.textContent = fmt(current.remaining);
-    ct.classList.toggle("urgent", current.remaining <= 10 && current.remaining > 0);
-    btn.textContent = current.running ? "⏸ Pause" : (current.remaining < current.total ? "▶ Resume" : "▶ Start");
-  }
-}
-
-function renderQueue(){
-  $("qCount").textContent = "(" + queue.length + ")";
-  const list = $("queueList");
-  list.querySelectorAll(".q-item").forEach(x => x.remove());
-
-  const empty = $("emptyQueue");
-  empty.style.display = queue.length ? "none" : "block";
-
-  queue.forEach(function(p, i){
-    const t = TYPES[p.type];
-    const item = document.createElement("div");
-    item.className = "q-item";
-    item.innerHTML =
-      '<div class="q-num">' + (i+1) + '</div>' +
-      '<div class="q-name"></div>' +
-      '<span class="badge ' + t.badgeClass + '" style="font-size:9px;padding:3px 7px;">' + t.label + '</span>' +
-      '<button class="remove-btn" onclick="removeFromQueue(' + i + ')">×</button>';
-    item.querySelector(".q-name").textContent = p.name;
-    list.appendChild(item);
-  });
-}
-
-function launchConfetti(){
-  const stage = $("stage");
-  const viewerCard = $("viewerCard");
-  const rect = viewerCard.getBoundingClientRect();
-  const stageRect = stage.getBoundingClientRect();
-  const colors = ["#c084fc","#f472b6","#fb923c","#facc15","#34d399","#60a5fa","#fff"];
-
-  /* convert viewport coords to unscaled stage coords */
-  const left = (rect.left - stageRect.left) / scale;
-  const top = (rect.top - stageRect.top) / scale;
-  const width = rect.width / scale;
-  const height = rect.height / scale;
-
-  for (let i=0; i<50; i++) {
-    setTimeout(function(){
-      const el = document.createElement("div");
-      el.className = "confetti";
-      el.style.left = (left + Math.random() * width) + "px";
-      el.style.top = (top + 8) + "px";
-      el.style.background = colors[Math.floor(Math.random()*colors.length)];
-      el.style.width = (Math.random()*7+5) + "px";
-      el.style.height = (Math.random()*7+5) + "px";
-      el.style.borderRadius = Math.random() > .5 ? "50%" : "2px";
-      el.style.setProperty("--fall", (height + 80) + "px");
-      el.style.setProperty("--drift", (Math.random()*120-60) + "px");
-      const dur = Math.random()*1.2 + 1.4;
-      el.style.animationDuration = dur + "s";
-      stage.appendChild(el);
-      setTimeout(function(){ el.remove(); }, dur*1000 + 300);
-    }, Math.random()*320);
-  }
-}
-
-$("nameInput").addEventListener("keydown", function(e){
-  if (e.key === "Enter") window.addPerson();
+document.addEventListener('keydown', e => {
+  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); startTimer(); }
+  if (e.code === 'KeyR') resetTimer();
 });
 
-document.addEventListener("keydown", function(e){
-  if (document.activeElement && document.activeElement.tagName === "INPUT") return;
-  if (e.code === "Space") { e.preventDefault(); window.startStop(); }
-  if (e.code === "Enter") { e.preventDefault(); window.nextPerson(); }
-  if (e.code === "KeyR" && current) {
-    current.remaining = current.total;
-    current.running = false;
-    stopTimer();
-    renderAll();
-  }
-});
-
-renderAll();
-})();
+render();
 </script>
 </body>
 </html>
