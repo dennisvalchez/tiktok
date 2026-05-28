@@ -14,14 +14,25 @@
   --shadow: 0 2px 20px rgba(0,0,0,0.12), 0 0 0 1.5px rgba(0,0,0,0.09);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent !important; }
+html, body {
+  background:rgba(0,0,0,0.001) !important;
+  min-width:100vw;
+  min-height:100vh;
+  overflow:hidden;
+}
 body { font-family:'DM Sans',sans-serif; min-height:100vh; }
 
 /* ══ OVERLAY (viewer) ══ */
 #overlay {
-  position:fixed; top:30px; left:30px;
-  width:520px; display:flex; flex-direction:column; gap:10px;
-  pointer-events:none; z-index:10;
+  position:fixed;
+  bottom:30px;
+  right:30px;
+  width:520px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  pointer-events:none;
+  z-index:999999;
 }
 
 .card-current {
@@ -125,8 +136,19 @@ body { font-family:'DM Sans',sans-serif; min-height:100vh; }
 }
 body.overlay-mode #panel { display:none !important; }
 body.overlay-mode,
-body.overlay-mode html { background:transparent !important; }
-body.overlay-mode #syncDotOverlay { display:block; }
+body.overlay-mode html {
+  background:rgba(0,0,0,0.001) !important;
+}
+
+body.overlay-mode #overlay {
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+body.overlay-mode #syncDotOverlay {
+  display:block;
+}
 
 .panel-header {
   background:white; border-bottom:1px solid #ddd;
@@ -964,6 +986,12 @@ connectWS();
 renderCurrent();
 renderQueue();
 renderOverlay();
+
+// Force initial visible overlay for TikTok browser source
+if (isOverlay) {
+  const cardCurrent = document.getElementById('cardCurrent');
+  cardCurrent.classList.remove('hidden');
+}
 </script>
 </body>
 </html>
