@@ -105,6 +105,9 @@ body { font-family:'DM Sans',sans-serif; min-height:100vh; }
 @keyframes confettiFall {
   0%   { transform:translateY(0) rotate(0deg) translateX(0); opacity:1; }
   80%  { opacity:1; }
+  100% { transform:translateY(var(--fallDistance, 260px)) rotate(720deg) translateX(var(--drift)); opacity:0; }
+}
+  80%  { opacity:1; }
   100% { transform:translateY(110vh) rotate(720deg) translateX(var(--drift)); opacity:0; }
 }
 
@@ -121,7 +124,7 @@ body { font-family:'DM Sans',sans-serif; min-height:100vh; }
 /* ══ CONTROL PANEL ══ */
 #panel {
   position:fixed; top:0; left:0; right:0; bottom:0;
-  background:transparent; display:flex; flex-direction:column; overflow:hidden;
+  background:#f0ede8; display:flex; flex-direction:column; overflow:hidden;
 }
 body.overlay-mode #panel { display:none !important; }
 body.overlay-mode,
@@ -253,61 +256,78 @@ body.overlay-mode #syncDotOverlay { display:block; }
   padding:1px 5px; font-size:10px; font-family:monospace;
 }
 
+/* ══ SOUND PANEL ══ */
+.sound-panel {
+  border-top:1px solid #eee; padding-top:14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.sound-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:5px;
+}
+.sound-btn {
+  border:1.5px solid #ddd; border-radius:9px; padding:7px 8px;
+  cursor:pointer; transition:all 0.15s; background:#fafafa;
+  display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif;
+}
+.sound-btn:hover { background:#f0f0f0; border-color:#bbb; }
+.sound-btn.selected { background:var(--black); border-color:var(--black); }
+.sound-btn.selected .snd-name { color:white; }
+.sound-btn.selected .snd-icon { filter:grayscale(1) brightness(3); }
+.snd-icon { font-size:14px; line-height:1; flex-shrink:0; }
+.snd-name { font-size:11px; font-weight:700; color:var(--black); line-height:1; }
+
+.vol-row {
+  display:flex; align-items:center; gap:10px;
+}
+.vol-label { font-size:11px; color:#999; white-space:nowrap; min-width:28px; }
+.vol-slider {
+  flex:1; -webkit-appearance:none; appearance:none;
+  height:4px; border-radius:4px; background:#ddd; outline:none; cursor:pointer;
+}
+.vol-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; width:16px; height:16px;
+  border-radius:50%; background:var(--black); cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.vol-slider::-moz-range-thumb {
+  width:16px; height:16px; border-radius:50%;
+  background:var(--black); cursor:pointer; border:none;
+}
+.vol-pct { font-size:11px; color:#999; min-width:30px; text-align:right; }
+.preview-btn {
+  background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
+  padding:6px 12px; font-family:'DM Sans',sans-serif; font-weight:700;
+  font-size:11px; color:#555; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.preview-btn:hover { background:#e0e0e0; }
+
+/* PATCH: sounds removed visually, layout preserved */
+.sound-panel { display:none !important; }
+.sync-status, #syncDotOverlay { display:none !important; }
+
+/* PATCH: idle text centered */
+.current-name.idle-title {
+  font-size:46px !important;
+  line-height:1.02 !important;
+  text-align:center !important;
+  width:100% !important;
+}
+.yn-text.idle-subtitle {
+  font-size:30px !important;
+  line-height:1.15 !important;
+  font-style:normal !important;
+  text-align:center !important;
+  width:100% !important;
+  display:block !important;
+}
+.timer-row.idle-center {
+  justify-content:center !important;
+  text-align:center !important;
+  width:100% !important;
+}
+.card-current { overflow:hidden !important; }
+
 </style>
-
-<style>
-html,body{
-background:transparent!important;
-overflow:hidden!important;
-}
-
-#overlay{
-position:fixed!important;
-top:20px!important;
-left:20px!important;
-width:700px!important;
-z-index:9999!important;
-}
-
-.card-current{
-overflow:hidden!important;
-}
-
-.current-name{
-font-size:58px!important;
-line-height:1!important;
-}
-
-.yn-text{
-font-size:54px!important;
-line-height:1.08!important;
-width:100%!important;
-text-align:center!important;
-}
-
-#panel{
-position:fixed!important;
-right:20px!important;
-top:20px!important;
-left:auto!important;
-bottom:20px!important;
-width:470px!important;
-height:auto!important;
-border-radius:20px!important;
-overflow:hidden!important;
-box-shadow:0 10px 30px rgba(0,0,0,0.18)!important;
-background:#f0ede8!important;
-}
-
-body::before{
-content:'';
-position:fixed;
-inset:0;
-background:transparent!important;
-pointer-events:none;
-}
-</style>
-
 </head>
 <body>
 
@@ -366,7 +386,20 @@ pointer-events:none;
       </div>
       <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
 
-      </div>
+      <div class="sound-panel">
+        <div class="col-label">Sound effect</div>
+        <div class="sound-grid" id="soundGrid">
+          <div class="sound-btn selected" data-sound="bell"      onclick="selectSound(this)"><span class="snd-icon">🔔</span><span class="snd-name">Bell</span></div>
+          <div class="sound-btn"          data-sound="chime"     onclick="selectSound(this)"><span class="snd-icon">🎵</span><span class="snd-name">Chime</span></div>
+          <div class="sound-btn"          data-sound="ding"      onclick="selectSound(this)"><span class="snd-icon">✨</span><span class="snd-name">Ding</span></div>
+          <div class="sound-btn"          data-sound="pop"       onclick="selectSound(this)"><span class="snd-icon">🫧</span><span class="snd-name">Pop</span></div>
+          <div class="sound-btn"          data-sound="sparkle"   onclick="selectSound(this)"><span class="snd-icon">⭐</span><span class="snd-name">Sparkle</span></div>
+          <div class="sound-btn"          data-sound="whoosh"    onclick="selectSound(this)"><span class="snd-icon">💨</span><span class="snd-name">Whoosh</span></div>
+          <div class="sound-btn"          data-sound="harp"      onclick="selectSound(this)"><span class="snd-icon">🎶</span><span class="snd-name">Harp</span></div>
+          <div class="sound-btn"          data-sound="marimba"   onclick="selectSound(this)"><span class="snd-icon">🪘</span><span class="snd-name">Marimba</span></div>
+          <div class="sound-btn"          data-sound="bowl"      onclick="selectSound(this)"><span class="snd-icon">🏮</span><span class="snd-name">Singing Bowl</span></div>
+          <div class="sound-btn"          data-sound="notification" onclick="selectSound(this)"><span class="snd-icon">📱</span><span class="snd-name">Notification</span></div>
+        </div>
         <div class="vol-row">
           <span class="vol-label">🔈</span>
           <input class="vol-slider" id="volSlider" type="range" min="0" max="100" value="40" oninput="updateVolume(this.value)"/>
@@ -402,7 +435,118 @@ pointer-events:none;
 </div>
 
 <script>
+// ══════════════════════════════════════════
+//  CONFIG — uses PieSocket demo (no signup)
+//  Channel is unique to you via CHANNEL_ID
+// ══════════════════════════════════════════
+const CLUSTER   = 'demo';
+const API_KEY   = 'VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV';
+const CHANNEL_ID = 'dennisvalchez-reading-queue-v1'; // unique to you
 
+const TYPES = {
+  yn:   { label:'YES / NO',   badgeClass:'badge-yn',   time:10  },
+  q:    { label:'QUESTION',   badgeClass:'badge-q',    time:20  },
+  guid: { label:'GUIDANCE',   badgeClass:'badge-guid', time:20  },
+  mini: { label:'Mini Read',  badgeClass:'badge-mini', time:60  },
+  med:  { label:'Mediumship', badgeClass:'badge-med',  time:180 },
+  deep: { label:'In-Depth',   badgeClass:'badge-deep', time:300 },
+};
+
+const isOverlay = new URLSearchParams(location.search).get('overlay') === '1';
+if (isOverlay) document.body.classList.add('overlay-mode');
+
+// ══ STATE ══
+let queue   = [];
+let current = null;  // {name,type,totalSecs,remaining,running}
+let tickInterval = null;
+let selectedType = 'yn';
+let ws = null;
+let isLeader = !isOverlay; // control panel is leader
+
+// ══ WEBSOCKET SYNC ══
+function connectWS() {
+  const url = `wss://${CLUSTER}.piesocket.com/v3/${CHANNEL_ID}?api_key=${API_KEY}&notify_self=1`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setSyncStatus(true);
+    if (isLeader) broadcastState(); // push current state when reconnecting
+  };
+
+  ws.onclose = () => {
+    setSyncStatus(false);
+    setTimeout(connectWS, 3000); // auto-reconnect
+  };
+
+  ws.onerror = () => setSyncStatus(false);
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      // Ignore PieSocket system messages
+      if (!msg.type || msg.type === 'system:connected') return;
+      if (msg.type === 'state') {
+        if (isOverlay) applyState(msg.payload);
+        // leader ignores state messages (it's the source of truth)
+      }
+      if (msg.type === 'requestState' && isLeader) {
+        broadcastState();
+      }
+    } catch(err) {}
+  };
+}
+
+function broadcastState() {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({
+    type: 'state',
+    payload: {
+      queue:   queue,
+      current: current ? {
+        name:       current.name,
+        type:       current.type,
+        totalSecs:  current.totalSecs,
+        remaining:  current.remaining,
+        running:    current.running,
+      } : null,
+    }
+  }));
+}
+
+function applyState(payload) {
+  // Overlay receives state and renders it
+  queue = payload.queue || [];
+  const c = payload.current;
+  if (c) {
+    // If timer was running, keep counting locally
+    const wasRunning = current && current.running;
+    current = { ...c };
+    if (c.running && c.totalSecs > 0) {
+      startLocalTick();
+    } else {
+      stopLocalTick();
+    }
+  } else {
+    current = null;
+    stopLocalTick();
+  }
+  renderOverlay();
+}
+
+function setSyncStatus(ok) {
+  const dot   = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  const dotOv = document.getElementById('syncDotOverlay');
+  if (dot)   { dot.className   = 'sync-dot ' + (ok ? 'ok' : 'err'); }
+  if (label) { label.textContent = ok ? 'Ready' : 'Reconnecting…'; }
+  if (dotOv) { dotOv.className = ok ? 'ok' : 'err'; }
+}
+
+// Overlay requests latest state when it loads
+function requestState() {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'requestState' }));
+}
 
 // ══ LOCAL TICK (overlay keeps counting between syncs) ══
 function startLocalTick() {
@@ -415,7 +559,7 @@ function startLocalTick() {
     if (current.remaining <= 0) {
       stopLocalTick();
       current.running = false;
-      
+      playChime();
       launchConfetti();
       renderOverlay();
     }
@@ -436,13 +580,13 @@ function startLeaderTick() {
     current.remaining = Math.max(0, current.remaining - 1);
     renderCurrent();
     renderOverlay();
-    
+    broadcastState();
     if (current.remaining <= 0) {
       stopLeaderTick();
       current.running = false;
       document.getElementById('btnStart').textContent = '▶ Start';
-      
-      
+      broadcastState();
+      playChime();
       launchConfetti();
       renderCurrent();
     }
@@ -469,7 +613,7 @@ function addPerson() {
   if (!current) loadNext(false);
   renderQueue();
   renderOverlay();
-  
+  broadcastState();
 }
 
 function loadNext(broadcast = true) {
@@ -483,7 +627,7 @@ function loadNext(broadcast = true) {
   renderQueue();
   renderCurrent();
   renderOverlay();
-  if (broadcast) 
+  if (broadcast) broadcastState();
 }
 
 function startStop() {
@@ -497,13 +641,13 @@ function startStop() {
     document.getElementById('btnStart').textContent = '⏸ Pause';
     if (current.totalSecs > 0) {
       if (current.remaining <= 0) current.remaining = current.totalSecs;
-      
+      playChime();
       startLeaderTick();
     }
   }
   renderCurrent();
   renderOverlay();
-  
+  broadcastState();
 }
 
 function markDone() {
@@ -565,7 +709,7 @@ function removeFromQueue(i) {
   queue.splice(i, 1);
   renderQueue();
   renderOverlay();
-  
+  broadcastState();
 }
 
 // ══ RENDER OVERLAY ══
@@ -581,19 +725,30 @@ function renderOverlay() {
   if (!current) {
     cardCurrent.classList.remove('hidden');
     ovName.textContent = 'Ask Psychic Medium';
+    ovName.classList.add('idle-title');
     ovName.style.textAlign = 'center';
+
     ovBadge.textContent = 'LIVE';
     ovBadge.className = 'type-badge badge-q';
+
     ovTimer.classList.add('hidden');
     ovBarWrap.classList.remove('visible');
+
     ovYN.classList.remove('hidden');
-    ovYN.innerHTML = 'Check "Viewer Wishlist"<br>to join the queue';
-    ovYN.style.textAlign = 'center';
-    renderUpnext(); return;
-    renderUpnext(); return;
+    ovYN.classList.add('idle-subtitle');
+    ovYN.innerHTML = 'Check "Viewer Wishlist"<span style="display:block;text-align:center;">to join the queue</span>';
+
+    document.querySelector('.timer-row')?.classList.add('idle-center');
+
+    renderUpnext();
+    return;
   }
   cardCurrent.classList.remove('hidden');
   ovName.textContent = current.name;
+  ovName.classList.remove('idle-title');
+  ovName.style.textAlign = '';
+  ovYN.classList.remove('idle-subtitle');
+  document.querySelector('.timer-row')?.classList.remove('idle-center');
   const t = TYPES[current.type];
   ovBadge.textContent = t.label;
   ovBadge.className   = 'type-badge ' + t.badgeClass;
@@ -633,23 +788,73 @@ function fmt(s) {
   return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
 }
 
+// ══ SOUND ENGINE ══
+let selectedSound = 'bell';
+let soundVolume   = 0.40;
+
+function selectSound(el) {
+  document.querySelectorAll('.sound-btn').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSound = el.dataset.sound;
+}
+
+function updateVolume(val) {
+  soundVolume = val / 100;
+  const pct = document.getElementById('volPct');
+  if (pct) pct.textContent = val + '%';
+}
+
+function makeReverb(ctx, secs=0.8) {
+  const conv = ctx.createConvolver();
+  const len  = ctx.sampleRate * secs;
+  const ir   = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch=0; ch<2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i=0; i<len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.5);
+  }
+  conv.buffer = ir;
+  return conv;
+}
+
+function playTone(ctx, freq, type, vol, attack, decay, dest) {
+  const osc = ctx.createOscillator(), g = ctx.createGain();
+  osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  g.gain.setValueAtTime(0, ctx.currentTime);
+  g.gain.linearRampToValueAtTime(vol, ctx.currentTime + attack);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + decay);
+  osc.connect(g); g.connect(dest);
+  osc.start(ctx.currentTime); osc.stop(ctx.currentTime + decay + 0.05);
+}
+
+function playChime() { /* sound disabled */ }
+
 // ══ CONFETTI ══
 function launchConfetti() {
+  const target = document.getElementById('cardCurrent') || document.getElementById('overlay');
+  const rect = target.getBoundingClientRect();
   const colors = ['#c084fc','#f472b6','#fb923c','#facc15','#34d399','#60a5fa','#fff'];
-  for (let i=0; i<80; i++) setTimeout(() => {
+
+  for (let i=0; i<55; i++) setTimeout(() => {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
-    el.style.left = Math.random()*100+'vw';
+
+    const x = rect.left + Math.random() * rect.width;
+    const y = rect.top + 6;
+    const fallDistance = Math.max(120, rect.height + 70);
+
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
     el.style.background = colors[Math.floor(Math.random()*colors.length)];
     el.style.width  = (Math.random()*7+5)+'px';
     el.style.height = (Math.random()*7+5)+'px';
     el.style.borderRadius = Math.random()>0.5?'50%':'2px';
-    const dur = Math.random()*2+2;
+    const dur = Math.random()*1.2+1.4;
     el.style.animationDuration = dur+'s';
-    el.style.setProperty('--drift',(Math.random()*200-100)+'px');
+    el.style.setProperty('--fallDistance', fallDistance + 'px');
+    el.style.setProperty('--drift',(Math.random()*120-60)+'px');
     document.body.appendChild(el);
     setTimeout(()=>el.remove(), dur*1000+500);
-  }, Math.random()*600);
+  }, Math.random()*350);
 }
 
 // ══ KEYBOARD ══
@@ -658,7 +863,7 @@ document.addEventListener('keydown', e => {
   if (e.code==='Space') { e.preventDefault(); startStop(); }
   if (e.code==='Enter') { e.preventDefault(); markDone(); }
   if (e.code==='KeyR')  {
-    if (current) { current.remaining=current.totalSecs; renderCurrent(); renderOverlay();  }
+    if (current) { current.remaining=current.totalSecs; renderCurrent(); renderOverlay(); broadcastState(); }
   }
 });
 document.getElementById('nameInput')?.addEventListener('keydown', e => {
@@ -666,16 +871,12 @@ document.getElementById('nameInput')?.addEventListener('keydown', e => {
 });
 
 // ══ INIT ══
-
+connectWS();
 // Overlay: request state after connection
-
+if (isOverlay) setTimeout(requestState, 1200);
 renderCurrent();
 renderQueue();
 renderOverlay();
 </script>
 </body>
 </html>
-
-<style>
-.sync-status, #syncDotOverlay { display:none !important; }
-</style>
