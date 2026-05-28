@@ -3,880 +3,847 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reading Queue</title>
+<title>Dennis Valchez Reading Queue</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap');
 
-:root {
-  --black: #0a0a0a;
-  --border: rgba(0,0,0,0.15);
-  --radius: 14px;
-  --shadow: 0 2px 20px rgba(0,0,0,0.12), 0 0 0 1.5px rgba(0,0,0,0.09);
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { background:transparent !important; }
-body { font-family:'DM Sans',sans-serif; min-height:100vh; }
-
-/* ══ OVERLAY (viewer) ══ */
-#overlay {
-  position:fixed; top:30px; left:30px;
-  width:520px; display:flex; flex-direction:column; gap:10px;
-  pointer-events:none; z-index:10;
+:root{
+  --black:#0a0a0a;
+  --bg:#f0ede8;
+  --border:rgba(0,0,0,.15);
+  --shadow:0 2px 20px rgba(0,0,0,.14), 0 0 0 1.5px rgba(0,0,0,.08);
 }
 
-.card-current {
-  background:white; border:2px solid var(--border);
-  border-radius:20px; box-shadow:var(--shadow);
-  padding:22px 26px 18px; display:flex; flex-direction:column; gap:10px;
-}
-.card-current.hidden { display:none; }
-
-.card-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-
-.current-name {
-  font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:700;
-  color:var(--black); line-height:1.05; flex:1;
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:transparent!important;
+  font-family:"DM Sans",Arial,sans-serif;
 }
 
-.type-badge {
-  font-size:16px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
-  padding:6px 14px; border-radius:10px; white-space:nowrap; border:2px solid currentColor;
-}
-.badge-yn   { color:#555;    border-color:#ccc;    background:#f5f5f5; }
-.badge-q    { color:#2563eb; border-color:#bfdbfe; background:#eff6ff; }
-.badge-guid { color:#7c3aed; border-color:#ddd6fe; background:#f5f3ff; }
-.badge-mini { color:#059669; border-color:#a7f3d0; background:#ecfdf5; }
-.badge-med  { color:#d97706; border-color:#fde68a; background:#fffbeb; }
-.badge-deep { color:#dc2626; border-color:#fecaca; background:#fef2f2; }
-
-.card-divider { height:2px; background:var(--border); }
-
-.timer-row { display:flex; align-items:center; gap:14px; }
-
-.timer-display {
-  font-family:'Cormorant Garamond',serif; font-size:80px; font-weight:700;
-  color:var(--black); letter-spacing:2px; line-height:1; min-width:180px;
-}
-.timer-display.urgent { color:#dc2626; }
-.timer-display.hidden { display:none; }
-
-.yn-text {
-  font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:600;
-  color:var(--black); font-style:italic; line-height:1;
-}
-.yn-text.hidden { display:none; }
-
-.timer-bar-wrap {
-  flex:1; height:6px; background:rgba(0,0,0,0.08);
-  border-radius:6px; overflow:hidden; display:none;
-}
-.timer-bar-wrap.visible { display:block; }
-.timer-bar {
-  height:100%; background:var(--black); border-radius:6px;
-  transition:width 0.5s linear; width:100%;
-}
-.timer-bar.urgent { background:#dc2626; }
-
-.card-upnext {
-  background:white; border:2px solid var(--border); border-radius:14px;
-  box-shadow:0 1px 8px rgba(0,0,0,0.07);
-  padding:12px 20px; display:flex; align-items:center; gap:12px;
-}
-.card-upnext.hidden { display:none; }
-.upnext-label {
-  font-size:14px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
-  color:rgba(0,0,0,0.35); white-space:nowrap;
-}
-.upnext-name {
-  font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600;
-  color:var(--black); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.upnext-badge {
-  font-size:12px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase;
-  padding:4px 10px; border-radius:7px; border:1.5px solid currentColor;
-  white-space:nowrap; margin-left:auto;
+/*
+  IMPORTANT:
+  TikTok Live Studio Link Source can use different internal resolutions.
+  This fixed stage is auto-scaled with JS, so the layout never overlaps.
+*/
+#stage{
+  width:1280px;
+  height:720px;
+  position:absolute;
+  left:0;
+  top:0;
+  transform-origin:top left;
+  background:transparent;
+  overflow:hidden;
 }
 
-/* confetti */
-.confetti-piece {
-  position:fixed; top:-20px; animation:confettiFall linear forwards;
-  pointer-events:none; z-index:9999; border-radius:2px;
-}
-@keyframes confettiFall {
-  0%   { transform:translateY(0) rotate(0deg) translateX(0); opacity:1; }
-  80%  { opacity:1; }
-  100% { transform:translateY(var(--fallDistance, 260px)) rotate(720deg) translateX(var(--drift)); opacity:0; }
-}
-  80%  { opacity:1; }
-  100% { transform:translateY(110vh) rotate(720deg) translateX(var(--drift)); opacity:0; }
-}
-
-/* connection dot on overlay */
-#syncDotOverlay {
-  position:fixed; bottom:10px; right:10px;
-  width:8px; height:8px; border-radius:50%;
-  background:#ccc; transition:background 0.3s;
+/* Viewer window — crop this area in TikTok Studio */
+#viewer{
+  position:absolute;
+  left:34px;
+  top:34px;
+  width:560px;
   pointer-events:none;
-}
-#syncDotOverlay.ok  { background:#4dffb3; box-shadow:0 0 6px #4dffb3; }
-#syncDotOverlay.err { background:#ff4d6d; }
-
-/* ══ CONTROL PANEL ══ */
-#panel {
-  position:fixed; top:0; left:0; right:0; bottom:0;
-  background:#f0ede8; display:flex; flex-direction:column; overflow:hidden;
-}
-body.overlay-mode #panel { display:none !important; }
-body.overlay-mode,
-body.overlay-mode html { background:transparent !important; }
-body.overlay-mode #syncDotOverlay { display:block; }
-
-.panel-header {
-  background:white; border-bottom:1px solid #ddd;
-  padding:12px 20px; display:flex; align-items:center;
-  justify-content:space-between; gap:12px; flex-shrink:0;
-}
-.panel-title {
-  font-family:'Cormorant Garamond',serif; font-size:20px;
-  font-weight:700; color:var(--black);
-}
-.sync-status {
-  display:flex; align-items:center; gap:6px;
-  font-size:11px; color:#999;
-}
-.sync-dot {
-  width:8px; height:8px; border-radius:50%; background:#ccc; transition:background 0.3s;
-}
-.sync-dot.ok  { background:#4dffb3; box-shadow:0 0 6px #4dffb3; }
-.sync-dot.err { background:#ff4d6d; }
-
-.panel-body { flex:1; display:flex; overflow:hidden; }
-
-/* Add col */
-.add-col {
-  width:290px; flex-shrink:0; background:white; border-right:1px solid #ddd;
-  padding:18px; display:flex; flex-direction:column; gap:12px; overflow-y:auto;
-}
-.col-label {
-  font-size:10px; font-weight:700; letter-spacing:1.5px;
-  text-transform:uppercase; color:rgba(0,0,0,0.38);
-}
-.name-input {
-  width:100%; border:1.5px solid #ddd; border-radius:10px;
-  padding:10px 14px; font-family:'Cormorant Garamond',serif;
-  font-size:18px; font-weight:600; color:var(--black);
-  background:#fafafa; outline:none; transition:border-color 0.2s;
-}
-.name-input:focus { border-color:#aaa; background:white; }
-.name-input::placeholder { color:#bbb; font-style:italic; }
-
-.type-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
-.type-option {
-  border:1.5px solid #ddd; border-radius:10px; padding:9px 10px;
-  cursor:pointer; transition:all 0.15s; background:#fafafa;
-  display:flex; flex-direction:column; gap:2px;
-}
-.type-option:hover { background:#f0f0f0; border-color:#bbb; }
-.type-option.selected { background:var(--black); border-color:var(--black); }
-.type-option.selected .to-name { color:white; }
-.type-option.selected .to-time { color:rgba(255,255,255,0.45); }
-.to-name { font-size:12px; font-weight:700; color:var(--black); line-height:1; }
-.to-time { font-size:10px; color:#999; }
-
-.add-btn {
-  width:100%; background:var(--black); color:white; border:none;
-  border-radius:10px; padding:12px; font-family:'DM Sans',sans-serif;
-  font-weight:700; font-size:14px; cursor:pointer; transition:opacity 0.15s;
-}
-.add-btn:hover { opacity:0.78; }
-
-/* Queue col */
-.queue-col {
-  flex:1; display:flex; flex-direction:column;
-  overflow:hidden; padding:18px; gap:12px;
-}
-.current-block {
-  background:white; border:1.5px solid #ddd; border-radius:var(--radius);
-  padding:14px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0;
-}
-.current-block.empty { opacity:0.4; }
-.cb-info { flex:1; min-width:0; }
-.cb-name {
-  font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:700;
-  color:var(--black); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.cb-sub { font-size:11px; color:#999; margin-top:2px; }
-.cb-timer {
-  font-family:'Cormorant Garamond',serif; font-size:34px; font-weight:700;
-  color:var(--black); min-width:78px; text-align:center;
-}
-.cb-timer.urgent { color:#dc2626; }
-.cb-timer.hidden { display:none; }
-.cb-btns { display:flex; flex-direction:column; gap:6px; }
-.btn-start {
-  background:var(--black); color:white; border:none; border-radius:8px;
-  padding:9px 16px; font-family:'DM Sans',sans-serif; font-weight:700;
-  font-size:13px; cursor:pointer; min-width:96px; text-align:center; transition:opacity 0.15s;
-}
-.btn-start:hover { opacity:0.75; }
-.btn-done {
-  background:#f0f0f0; color:#555; border:1px solid #ddd; border-radius:8px;
-  padding:8px 16px; font-family:'DM Sans',sans-serif; font-weight:700;
-  font-size:12px; cursor:pointer; text-align:center; transition:all 0.15s;
-}
-.btn-done:hover { background:#e0e0e0; }
-
-.queue-label-row { display:flex; align-items:center; justify-content:space-between; }
-.queue-scroll {
-  flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
-}
-.q-item {
-  background:white; border:1.5px solid #ddd; border-radius:10px;
-  padding:10px 14px; display:flex; align-items:center; gap:10px;
-}
-.q-num { font-size:11px; font-weight:700; color:#ccc; min-width:16px; }
-.q-name {
-  font-family:'Cormorant Garamond',serif; font-size:17px;
-  font-weight:600; color:var(--black); flex:1;
-}
-.q-remove {
-  background:none; border:none; color:#ccc; font-size:16px;
-  cursor:pointer; padding:2px 4px; border-radius:4px; transition:color 0.15s;
-}
-.q-remove:hover { color:#dc2626; }
-.empty-queue {
-  text-align:center; padding:28px 20px; color:#bbb;
-  font-size:13px; font-style:italic;
-}
-.kbd-hint {
-  font-size:11px; color:#bbb; text-align:center; padding:4px 0 0; flex-shrink:0;
-}
-.kbd-hint kbd {
-  background:#eee; border:1px solid #ddd; border-radius:4px;
-  padding:1px 5px; font-size:10px; font-family:monospace;
+  z-index:10;
 }
 
-/* ══ SOUND PANEL ══ */
-.sound-panel {
-  border-top:1px solid #eee; padding-top:14px;
-  display:flex; flex-direction:column; gap:10px;
+.viewer-card{
+  width:560px;
+  background:#fff;
+  border:2px solid var(--border);
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  padding:22px 26px 20px;
+  overflow:hidden;
+  position:relative;
 }
-.sound-grid {
-  display:grid; grid-template-columns:1fr 1fr; gap:5px;
-}
-.sound-btn {
-  border:1.5px solid #ddd; border-radius:9px; padding:7px 8px;
-  cursor:pointer; transition:all 0.15s; background:#fafafa;
-  display:flex; align-items:center; gap:6px; font-family:'DM Sans',sans-serif;
-}
-.sound-btn:hover { background:#f0f0f0; border-color:#bbb; }
-.sound-btn.selected { background:var(--black); border-color:var(--black); }
-.sound-btn.selected .snd-name { color:white; }
-.sound-btn.selected .snd-icon { filter:grayscale(1) brightness(3); }
-.snd-icon { font-size:14px; line-height:1; flex-shrink:0; }
-.snd-name { font-size:11px; font-weight:700; color:var(--black); line-height:1; }
 
-.vol-row {
-  display:flex; align-items:center; gap:10px;
+.viewer-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
 }
-.vol-label { font-size:11px; color:#999; white-space:nowrap; min-width:28px; }
-.vol-slider {
-  flex:1; -webkit-appearance:none; appearance:none;
-  height:4px; border-radius:4px; background:#ddd; outline:none; cursor:pointer;
-}
-.vol-slider::-webkit-slider-thumb {
-  -webkit-appearance:none; width:16px; height:16px;
-  border-radius:50%; background:var(--black); cursor:pointer;
-  box-shadow:0 1px 4px rgba(0,0,0,0.2);
-}
-.vol-slider::-moz-range-thumb {
-  width:16px; height:16px; border-radius:50%;
-  background:var(--black); cursor:pointer; border:none;
-}
-.vol-pct { font-size:11px; color:#999; min-width:30px; text-align:right; }
-.preview-btn {
-  background:#f0f0f0; border:1px solid #ddd; border-radius:8px;
-  padding:6px 12px; font-family:'DM Sans',sans-serif; font-weight:700;
-  font-size:11px; color:#555; cursor:pointer; transition:all 0.15s; white-space:nowrap;
-}
-.preview-btn:hover { background:#e0e0e0; }
 
-/* PATCH: sounds removed visually, layout preserved */
-.sound-panel { display:none !important; }
-.sync-status, #syncDotOverlay { display:none !important; }
+#viewerName{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:52px;
+  font-weight:700;
+  line-height:1;
+  color:var(--black);
+  flex:1;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 
-/* PATCH: idle text centered */
-.current-name.idle-title {
-  font-size:46px !important;
-  line-height:1.02 !important;
-  text-align:center !important;
-  width:100% !important;
+#viewerName.idle{
+  white-space:normal;
+  font-size:50px;
+  line-height:1;
+  text-align:center;
+  width:100%;
 }
-.yn-text.idle-subtitle {
-  font-size:30px !important;
-  line-height:1.15 !important;
-  font-style:normal !important;
-  text-align:center !important;
-  width:100% !important;
-  display:block !important;
-}
-.timer-row.idle-center {
-  justify-content:center !important;
-  text-align:center !important;
-  width:100% !important;
-}
-.card-current { overflow:hidden !important; }
 
+.badge{
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:.45px;
+  text-transform:uppercase;
+  padding:6px 13px;
+  border-radius:10px;
+  border:2px solid currentColor;
+  white-space:nowrap;
+}
+
+.badge-yn{color:#555;border-color:#ccc;background:#f5f5f5}
+.badge-q{color:#2563eb;border-color:#bfdbfe;background:#eff6ff}
+.badge-guid{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff}
+.badge-mini{color:#059669;border-color:#a7f3d0;background:#ecfdf5}
+.badge-med{color:#d97706;border-color:#fde68a;background:#fffbeb}
+.badge-deep{color:#dc2626;border-color:#fecaca;background:#fef2f2}
+
+.divider{
+  height:2px;
+  background:var(--border);
+  margin:12px 0;
+}
+
+.timer-row{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+}
+
+#viewerTimer{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:82px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:2px;
+  color:var(--black);
+  min-width:190px;
+  text-align:center;
+}
+
+#viewerTimer.urgent{
+  color:#dc2626;
+  animation:pulseUrgent 1s infinite;
+}
+
+@keyframes pulseUrgent{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.06);opacity:.72}
+}
+
+#viewerSubtitle{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:32px;
+  font-weight:600;
+  line-height:1.12;
+  text-align:center;
+  width:100%;
+  color:var(--black);
+}
+
+.bar-wrap{
+  height:7px;
+  background:rgba(0,0,0,.08);
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:14px;
+  display:none;
+}
+
+#bar{
+  height:100%;
+  width:100%;
+  background:var(--black);
+  border-radius:10px;
+  transition:width .35s linear;
+}
+
+#bar.urgent{background:#dc2626}
+
+.info-card{
+  width:560px;
+  background:#fff;
+  border:2px solid var(--border);
+  border-radius:16px;
+  box-shadow:0 1px 8px rgba(0,0,0,.08);
+  padding:11px 18px;
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+#upNextCard{display:none}
+
+.label{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.38);
+  white-space:nowrap;
+}
+
+#upNextName,#queueText{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:27px;
+  font-weight:700;
+  color:var(--black);
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Control panel */
+#panel{
+  position:absolute;
+  left:630px;
+  top:34px;
+  width:610px;
+  height:652px;
+  background:var(--bg);
+  border-radius:22px;
+  overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,.18);
+  display:flex;
+  flex-direction:column;
+  z-index:1;
+}
+
+.panel-header{
+  background:#fff;
+  padding:14px 18px;
+  border-bottom:1px solid #ddd;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+}
+
+.panel-title{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:25px;
+  font-weight:700;
+  color:var(--black);
+}
+
+.panel-ready{
+  font-size:12px;
+  color:#999;
+  font-weight:700;
+}
+
+.panel-body{
+  flex:1;
+  display:flex;
+  min-height:0;
+}
+
+.add-col{
+  width:260px;
+  background:#fff;
+  border-right:1px solid #ddd;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:auto;
+}
+
+.small-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.4);
+}
+
+#nameInput{
+  width:100%;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 14px;
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:20px;
+  font-weight:700;
+  outline:none;
+  background:#fafafa;
+  color:var(--black);
+}
+
+#nameInput:focus{background:#fff;border-color:#aaa}
+#nameInput::placeholder{color:#bbb;font-style:italic}
+
+.type-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+
+.type-option{
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:9px 8px;
+  background:#fafafa;
+  cursor:pointer;
+  user-select:none;
+}
+
+.type-option:hover{background:#f0f0f0;border-color:#bbb}
+.type-option.selected{
+  background:var(--black);
+  border-color:var(--black);
+  color:#fff;
+}
+
+.type-name{font-size:12px;font-weight:700;line-height:1}
+.type-time{font-size:10px;opacity:.55;margin-top:4px}
+
+button{
+  font-family:"DM Sans",Arial,sans-serif;
+  cursor:pointer;
+  user-select:none;
+}
+
+.add-btn{
+  background:var(--black);
+  color:#fff;
+  border:0;
+  border-radius:10px;
+  padding:12px;
+  font-weight:700;
+  font-size:14px;
+}
+
+.add-btn:hover,.start-btn:hover{opacity:.78}
+
+.queue-col{
+  flex:1;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
+
+.current-block{
+  background:#fff;
+  border:1.5px solid #ddd;
+  border-radius:14px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-shrink:0;
+}
+
+.current-info{flex:1;min-width:0}
+
+#currentName{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:24px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  color:var(--black);
+}
+
+#currentSub{
+  font-size:12px;
+  color:#999;
+  margin-top:2px;
+}
+
+#currentTimer{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:34px;
+  font-weight:700;
+  min-width:82px;
+  text-align:center;
+  color:var(--black);
+}
+
+#currentTimer.urgent{color:#dc2626}
+
+.btns{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.start-btn{
+  background:var(--black);
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:9px 14px;
+  font-weight:700;
+  min-width:92px;
+}
+
+.next-btn{
+  background:#eee;
+  color:#555;
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:8px 14px;
+  font-weight:700;
+}
+
+.queue-list{
+  flex:1;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  min-height:0;
+}
+
+.q-item{
+  background:#fff;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-shrink:0;
+}
+
+.q-num{
+  font-size:11px;
+  font-weight:700;
+  color:#bbb;
+  min-width:18px;
+}
+
+.q-name{
+  font-family:"Cormorant Garamond",Georgia,serif;
+  font-size:19px;
+  font-weight:700;
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--black);
+}
+
+.remove-btn{
+  background:none;
+  border:0;
+  color:#bbb;
+  font-size:18px;
+  padding:0 4px;
+}
+
+.remove-btn:hover{color:#dc2626}
+
+.empty{
+  color:#aaa;
+  text-align:center;
+  padding:30px 10px;
+  font-size:13px;
+  font-style:italic;
+}
+
+.confetti{
+  position:absolute;
+  pointer-events:none;
+  z-index:999999;
+  border-radius:3px;
+  animation:confettiFall linear forwards;
+}
+
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg) translateX(0);opacity:1}
+  85%{opacity:1}
+  100%{transform:translateY(var(--fall)) rotate(720deg) translateX(var(--drift));opacity:0}
+}
+
+/* Emergency responsive fallback if JS scaling is blocked */
+@media (max-width:900px){
+  #stage{transform:scale(.7);transform-origin:top left}
+}
 </style>
 </head>
 <body>
-
-<!-- ══ OVERLAY ══ -->
-<div id="overlay">
-  <div class="card-current hidden" id="cardCurrent">
-    <div class="card-top">
-      <div class="current-name" id="ovName">—</div>
-      <div class="type-badge" id="ovBadge"></div>
-    </div>
-    <div class="card-divider"></div>
-    <div class="timer-row">
-      <div class="timer-display hidden" id="ovTimer">00:00</div>
-      <div class="yn-text hidden" id="ovYN"></div>
-      <div class="timer-bar-wrap" id="ovBarWrap">
-        <div class="timer-bar" id="ovBar"></div>
+<div id="stage">
+  <div id="viewer">
+    <div class="viewer-card" id="viewerCard">
+      <div class="viewer-top">
+        <div id="viewerName">Ask Psychic Medium</div>
+        <div class="badge badge-q" id="viewerBadge">LIVE</div>
+      </div>
+      <div class="divider"></div>
+      <div class="timer-row">
+        <div id="viewerTimer" style="display:none;">00:00</div>
+        <div id="viewerSubtitle">Check "Viewer Wishlist"<br>to join the queue</div>
+      </div>
+      <div class="bar-wrap" id="barWrap">
+        <div id="bar"></div>
       </div>
     </div>
-  </div>
-  <div class="card-upnext hidden" id="cardUpnext">
-    <span class="upnext-label">Up next</span>
-    <span class="upnext-name" id="ovUpnextName"></span>
-    <span class="upnext-badge" id="ovUpnextBadge"></span>
-  </div>
-</div>
-<div id="syncDotOverlay"></div>
 
-<!-- ══ CONTROL PANEL ══ -->
-<div id="panel">
-  <div class="panel-header">
-    <div class="panel-title">✦ Reading Queue</div>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <div class="sync-status">
-        <div class="sync-dot" id="syncDot"></div>
-        <span id="syncLabel">Ready</span>
-      </div>
-      <div style="font-size:11px;color:#bbb;">
-        <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;">Space</kbd> start
-        <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;margin-left:4px;">Enter</kbd> next
-        <kbd style="background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;margin-left:4px;">R</kbd> reset
-      </div>
+    <div class="info-card" id="upNextCard">
+      <span class="label">Up next</span>
+      <span id="upNextName"></span>
+      <span class="badge" id="upNextBadge"></span>
+    </div>
+
+    <div class="info-card">
+      <span class="label">Queue</span>
+      <span id="queueText">No one waiting</span>
     </div>
   </div>
-  <div class="panel-body">
-    <div class="add-col">
-      <div class="col-label">Add to queue</div>
-      <input class="name-input" id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off"/>
-      <div class="col-label">Reading type</div>
-      <div class="type-grid" id="typeGrid">
-        <div class="type-option selected" data-type="yn"   onclick="selectType(this)"><div class="to-name">Yes / No</div><div class="to-time">10 sec</div></div>
-        <div class="type-option"          data-type="q"    onclick="selectType(this)"><div class="to-name">Question</div><div class="to-time">20 sec</div></div>
-        <div class="type-option"          data-type="guid" onclick="selectType(this)"><div class="to-name">Guidance</div><div class="to-time">20 sec</div></div>
-        <div class="type-option"          data-type="mini" onclick="selectType(this)"><div class="to-name">Mini Reading</div><div class="to-time">1 min</div></div>
-        <div class="type-option"          data-type="med"  onclick="selectType(this)"><div class="to-name">Mediumship</div><div class="to-time">3 min</div></div>
-        <div class="type-option"          data-type="deep" onclick="selectType(this)"><div class="to-name">In-Depth Read</div><div class="to-time">5 min</div></div>
-      </div>
-      <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
 
-      <div class="sound-panel">
-        <div class="col-label">Sound effect</div>
-        <div class="sound-grid" id="soundGrid">
-          <div class="sound-btn selected" data-sound="bell"      onclick="selectSound(this)"><span class="snd-icon">🔔</span><span class="snd-name">Bell</span></div>
-          <div class="sound-btn"          data-sound="chime"     onclick="selectSound(this)"><span class="snd-icon">🎵</span><span class="snd-name">Chime</span></div>
-          <div class="sound-btn"          data-sound="ding"      onclick="selectSound(this)"><span class="snd-icon">✨</span><span class="snd-name">Ding</span></div>
-          <div class="sound-btn"          data-sound="pop"       onclick="selectSound(this)"><span class="snd-icon">🫧</span><span class="snd-name">Pop</span></div>
-          <div class="sound-btn"          data-sound="sparkle"   onclick="selectSound(this)"><span class="snd-icon">⭐</span><span class="snd-name">Sparkle</span></div>
-          <div class="sound-btn"          data-sound="whoosh"    onclick="selectSound(this)"><span class="snd-icon">💨</span><span class="snd-name">Whoosh</span></div>
-          <div class="sound-btn"          data-sound="harp"      onclick="selectSound(this)"><span class="snd-icon">🎶</span><span class="snd-name">Harp</span></div>
-          <div class="sound-btn"          data-sound="marimba"   onclick="selectSound(this)"><span class="snd-icon">🪘</span><span class="snd-name">Marimba</span></div>
-          <div class="sound-btn"          data-sound="bowl"      onclick="selectSound(this)"><span class="snd-icon">🏮</span><span class="snd-name">Singing Bowl</span></div>
-          <div class="sound-btn"          data-sound="notification" onclick="selectSound(this)"><span class="snd-icon">📱</span><span class="snd-name">Notification</span></div>
-        </div>
-        <div class="vol-row">
-          <span class="vol-label">🔈</span>
-          <input class="vol-slider" id="volSlider" type="range" min="0" max="100" value="40" oninput="updateVolume(this.value)"/>
-          <span class="vol-pct" id="volPct">40%</span>
-          <button class="preview-btn" onclick="playChime()">▶ Test</button>
-        </div>
-      </div>
+  <div id="panel">
+    <div class="panel-header">
+      <div class="panel-title">✦ Reading Queue</div>
+      <div class="panel-ready">READY</div>
     </div>
 
-    <div class="queue-col">
-      <div class="col-label">Now reading</div>
-      <div class="current-block empty" id="cbBlock">
-        <div class="cb-info">
-          <div class="cb-name" id="cbName">No one yet</div>
-          <div class="cb-sub" id="cbSub">Add someone to begin</div>
+    <div class="panel-body">
+      <div class="add-col">
+        <div class="small-label">Add to queue</div>
+        <input id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off">
+
+        <div class="small-label">Reading type</div>
+        <div class="type-grid">
+          <div class="type-option selected" data-type="yn" onclick="selectType(this)">
+            <div class="type-name">Yes / No</div><div class="type-time">10 sec</div>
+          </div>
+          <div class="type-option" data-type="q" onclick="selectType(this)">
+            <div class="type-name">Question</div><div class="type-time">20 sec</div>
+          </div>
+          <div class="type-option" data-type="guid" onclick="selectType(this)">
+            <div class="type-name">Guidance</div><div class="type-time">20 sec</div>
+          </div>
+          <div class="type-option" data-type="mini" onclick="selectType(this)">
+            <div class="type-name">Mini Reading</div><div class="type-time">1 min</div>
+          </div>
+          <div class="type-option" data-type="med" onclick="selectType(this)">
+            <div class="type-name">Mediumship</div><div class="type-time">3 min</div>
+          </div>
+          <div class="type-option" data-type="deep" onclick="selectType(this)">
+            <div class="type-name">In-Depth</div><div class="type-time">5 min</div>
+          </div>
         </div>
-        <div class="cb-timer hidden" id="cbTimer">—</div>
-        <div class="cb-btns">
-          <button class="btn-start" id="btnStart" onclick="startStop()">▶ Start</button>
-          <button class="btn-done" onclick="markDone()">✓ Done / Next</button>
-        </div>
+
+        <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
       </div>
 
-      <div class="queue-label-row">
-        <div class="col-label">Queue <span id="qCount" style="color:#bbb">(0)</span></div>
+      <div class="queue-col">
+        <div class="small-label">Now reading</div>
+        <div class="current-block">
+          <div class="current-info">
+            <div id="currentName">No one yet</div>
+            <div id="currentSub">Add someone to begin</div>
+          </div>
+          <div id="currentTimer" style="display:none;">00:00</div>
+          <div class="btns">
+            <button class="start-btn" id="startBtn" onclick="startStop()">▶ Start</button>
+            <button class="next-btn" onclick="nextPerson()">✓ Done / Next</button>
+          </div>
+        </div>
+
+        <div class="small-label">Queue <span id="qCount">(0)</span></div>
+        <div class="queue-list" id="queueList">
+          <div class="empty" id="emptyQueue">No one in queue yet</div>
+        </div>
       </div>
-      <div class="queue-scroll" id="queueList">
-        <div class="empty-queue" id="emptyMsg">No one in queue yet</div>
-      </div>
-      <div class="kbd-hint"><kbd>Space</kbd> start/pause · <kbd>Enter</kbd> next person · <kbd>R</kbd> reset timer</div>
     </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════
-//  CONFIG — uses PieSocket demo (no signup)
-//  Channel is unique to you via CHANNEL_ID
-// ══════════════════════════════════════════
-const CLUSTER   = 'demo';
-const API_KEY   = 'VCXCEuvhGcBDP7XhiJJUDvR1e1D3eiVjgZ9VRiaV';
-const CHANNEL_ID = 'dennisvalchez-reading-queue-v1'; // unique to you
+(function(){
+"use strict";
 
 const TYPES = {
-  yn:   { label:'YES / NO',   badgeClass:'badge-yn',   time:10  },
-  q:    { label:'QUESTION',   badgeClass:'badge-q',    time:20  },
-  guid: { label:'GUIDANCE',   badgeClass:'badge-guid', time:20  },
-  mini: { label:'Mini Read',  badgeClass:'badge-mini', time:60  },
-  med:  { label:'Mediumship', badgeClass:'badge-med',  time:180 },
-  deep: { label:'In-Depth',   badgeClass:'badge-deep', time:300 },
+  yn:   { label:"YES / NO",   badgeClass:"badge-yn",   time:10 },
+  q:    { label:"QUESTION",   badgeClass:"badge-q",    time:20 },
+  guid: { label:"GUIDANCE",   badgeClass:"badge-guid", time:20 },
+  mini: { label:"MINI READ",  badgeClass:"badge-mini", time:60 },
+  med:  { label:"MEDIUMSHIP", badgeClass:"badge-med",  time:180 },
+  deep: { label:"IN-DEPTH",   badgeClass:"badge-deep", time:300 }
 };
 
-const isOverlay = new URLSearchParams(location.search).get('overlay') === '1';
-if (isOverlay) document.body.classList.add('overlay-mode');
+let queue = [];
+let current = null;
+let selectedType = "yn";
+let timer = null;
+let scale = 1;
 
-// ══ STATE ══
-let queue   = [];
-let current = null;  // {name,type,totalSecs,remaining,running}
-let tickInterval = null;
-let selectedType = 'yn';
-let ws = null;
-let isLeader = !isOverlay; // control panel is leader
-
-// ══ WEBSOCKET SYNC ══
-function connectWS() {
-  const url = `wss://${CLUSTER}.piesocket.com/v3/${CHANNEL_ID}?api_key=${API_KEY}&notify_self=1`;
-  ws = new WebSocket(url);
-
-  ws.onopen = () => {
-    setSyncStatus(true);
-    if (isLeader) broadcastState(); // push current state when reconnecting
-  };
-
-  ws.onclose = () => {
-    setSyncStatus(false);
-    setTimeout(connectWS, 3000); // auto-reconnect
-  };
-
-  ws.onerror = () => setSyncStatus(false);
-
-  ws.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      // Ignore PieSocket system messages
-      if (!msg.type || msg.type === 'system:connected') return;
-      if (msg.type === 'state') {
-        if (isOverlay) applyState(msg.payload);
-        // leader ignores state messages (it's the source of truth)
-      }
-      if (msg.type === 'requestState' && isLeader) {
-        broadcastState();
-      }
-    } catch(err) {}
-  };
+/* Fixes TikTok Live Studio Link Source resolution differences */
+function fitStage(){
+  const stage = document.getElementById("stage");
+  const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+  scale = Math.min(vw / 1280, vh / 720);
+  if (!isFinite(scale) || scale <= 0) scale = 1;
+  stage.style.transform = "scale(" + scale + ")";
 }
+window.addEventListener("resize", fitStage);
+fitStage();
 
-function broadcastState() {
-  if (!ws || ws.readyState !== 1) return;
-  ws.send(JSON.stringify({
-    type: 'state',
-    payload: {
-      queue:   queue,
-      current: current ? {
-        name:       current.name,
-        type:       current.type,
-        totalSecs:  current.totalSecs,
-        remaining:  current.remaining,
-        running:    current.running,
-      } : null,
-    }
-  }));
-}
+function $(id){ return document.getElementById(id); }
 
-function applyState(payload) {
-  // Overlay receives state and renders it
-  queue = payload.queue || [];
-  const c = payload.current;
-  if (c) {
-    // If timer was running, keep counting locally
-    const wasRunning = current && current.running;
-    current = { ...c };
-    if (c.running && c.totalSecs > 0) {
-      startLocalTick();
-    } else {
-      stopLocalTick();
-    }
-  } else {
-    current = null;
-    stopLocalTick();
-  }
-  renderOverlay();
-}
-
-function setSyncStatus(ok) {
-  const dot   = document.getElementById('syncDot');
-  const label = document.getElementById('syncLabel');
-  const dotOv = document.getElementById('syncDotOverlay');
-  if (dot)   { dot.className   = 'sync-dot ' + (ok ? 'ok' : 'err'); }
-  if (label) { label.textContent = ok ? 'Ready' : 'Reconnecting…'; }
-  if (dotOv) { dotOv.className = ok ? 'ok' : 'err'; }
-}
-
-// Overlay requests latest state when it loads
-function requestState() {
-  if (!ws || ws.readyState !== 1) return;
-  ws.send(JSON.stringify({ type: 'requestState' }));
-}
-
-// ══ LOCAL TICK (overlay keeps counting between syncs) ══
-function startLocalTick() {
-  stopLocalTick();
-  if (!current || current.totalSecs === 0) return;
-  tickInterval = setInterval(() => {
-    if (!current || !current.running) return;
-    current.remaining = Math.max(0, current.remaining - 1);
-    renderOverlay();
-    if (current.remaining <= 0) {
-      stopLocalTick();
-      current.running = false;
-      playChime();
-      launchConfetti();
-      renderOverlay();
-    }
-  }, 1000);
-}
-
-function stopLocalTick() {
-  if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
-}
-
-// ══ LEADER TICK ══
-let leaderTick = null;
-function startLeaderTick() {
-  stopLeaderTick();
-  if (!current || current.totalSecs === 0) return;
-  leaderTick = setInterval(() => {
-    if (!current || !current.running) return;
-    current.remaining = Math.max(0, current.remaining - 1);
-    renderCurrent();
-    renderOverlay();
-    broadcastState();
-    if (current.remaining <= 0) {
-      stopLeaderTick();
-      current.running = false;
-      document.getElementById('btnStart').textContent = '▶ Start';
-      broadcastState();
-      playChime();
-      launchConfetti();
-      renderCurrent();
-    }
-  }, 1000);
-}
-function stopLeaderTick() {
-  if (leaderTick) { clearInterval(leaderTick); leaderTick = null; }
-}
-
-// ══ UI ACTIONS ══
-function selectType(el) {
-  document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
+window.selectType = function(el){
+  document.querySelectorAll(".type-option").forEach(x => x.classList.remove("selected"));
+  el.classList.add("selected");
   selectedType = el.dataset.type;
-}
+};
 
-function addPerson() {
-  const raw = document.getElementById('nameInput').value.trim();
-  if (!raw) { document.getElementById('nameInput').focus(); return; }
+window.addPerson = function(){
+  const input = $("nameInput");
+  const raw = input.value.trim();
+  if (!raw) { input.focus(); return; }
+
   const name = raw.charAt(0).toUpperCase() + raw.slice(1);
-  queue.push({ name, type: selectedType });
-  document.getElementById('nameInput').value = '';
-  document.getElementById('nameInput').focus();
-  if (!current) loadNext(false);
-  renderQueue();
-  renderOverlay();
-  broadcastState();
-}
+  queue.push({ name, type:selectedType });
+  input.value = "";
+  input.focus();
 
-function loadNext(broadcast = true) {
-  stopLeaderTick();
-  if (queue.length === 0) { current = null; }
-  else {
+  if (!current) loadNext();
+  renderAll();
+};
+
+function loadNext(){
+  stopTimer();
+  if (!queue.length) {
+    current = null;
+  } else {
     const p = queue.shift();
     const t = TYPES[p.type];
-    current = { name:p.name, type:p.type, totalSecs:t.time, remaining:t.time, running:false };
+    current = {
+      name:p.name,
+      type:p.type,
+      total:t.time,
+      remaining:t.time,
+      running:false
+    };
   }
-  renderQueue();
-  renderCurrent();
-  renderOverlay();
-  if (broadcast) broadcastState();
+  renderAll();
 }
 
-function startStop() {
+window.startStop = function(){
   if (!current) return;
+
   if (current.running) {
     current.running = false;
-    stopLeaderTick();
-    document.getElementById('btnStart').textContent = '▶ Resume';
+    stopTimer();
   } else {
+    if (current.remaining <= 0) current.remaining = current.total;
     current.running = true;
-    document.getElementById('btnStart').textContent = '⏸ Pause';
-    if (current.totalSecs > 0) {
-      if (current.remaining <= 0) current.remaining = current.totalSecs;
-      playChime();
-      startLeaderTick();
+    startTimer();
+  }
+  renderAll();
+};
+
+function startTimer(){
+  stopTimer();
+  timer = setInterval(function(){
+    if (!current || !current.running) return;
+    current.remaining = Math.max(0, current.remaining - 1);
+    renderAll();
+
+    if (current.remaining <= 0) {
+      current.running = false;
+      stopTimer();
+      launchConfetti();
+      renderAll();
     }
+  }, 1000);
+}
+
+function stopTimer(){
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
   }
-  renderCurrent();
-  renderOverlay();
-  broadcastState();
 }
 
-function markDone() {
-  stopLeaderTick();
-  loadNext(true);
+window.nextPerson = function(){
+  loadNext();
+};
+
+window.removeFromQueue = function(i){
+  queue.splice(i, 1);
+  renderAll();
+};
+
+function fmt(s){
+  return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0");
 }
 
-// ══ RENDER PANEL ══
-function renderCurrent() {
-  const block   = document.getElementById('cbBlock');
-  const cbName  = document.getElementById('cbName');
-  const cbSub   = document.getElementById('cbSub');
-  const cbTimer = document.getElementById('cbTimer');
-  const btnStart= document.getElementById('btnStart');
+function renderAll(){
+  renderViewer();
+  renderPanel();
+  renderQueue();
+}
+
+function renderViewer(){
+  const viewerName = $("viewerName");
+  const viewerBadge = $("viewerBadge");
+  const viewerTimer = $("viewerTimer");
+  const viewerSubtitle = $("viewerSubtitle");
+  const barWrap = $("barWrap");
+  const bar = $("bar");
+
   if (!current) {
-    block.classList.add('empty');
-    cbName.textContent = 'No one yet';
-    cbSub.textContent  = 'Add someone to begin';
-    cbTimer.classList.add('hidden');
-    btnStart.textContent = '▶ Start';
-    return;
-  }
-  block.classList.remove('empty');
-  cbName.textContent = current.name;
-  const t = TYPES[current.type];
-  cbSub.textContent  = t.label + (t.time > 0 ? ` · ${t.time/60} min` : ' · No timer');
-  if (current.totalSecs > 0) {
-    cbTimer.classList.remove('hidden');
-    cbTimer.textContent = fmt(current.remaining);
-    cbTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+    viewerName.textContent = "Ask Psychic Medium";
+    viewerName.classList.add("idle");
+    viewerBadge.textContent = "LIVE";
+    viewerBadge.className = "badge badge-q";
+    viewerTimer.style.display = "none";
+    viewerTimer.classList.remove("urgent");
+    viewerSubtitle.style.display = "block";
+    viewerSubtitle.innerHTML = 'Check "Viewer Wishlist"<br>to join the queue';
+    barWrap.style.display = "none";
   } else {
-    cbTimer.classList.add('hidden');
+    const t = TYPES[current.type];
+    viewerName.textContent = current.name;
+    viewerName.classList.remove("idle");
+    viewerBadge.textContent = t.label;
+    viewerBadge.className = "badge " + t.badgeClass;
+    viewerTimer.style.display = "block";
+    viewerTimer.textContent = fmt(current.remaining);
+    viewerTimer.classList.toggle("urgent", current.remaining <= 10 && current.remaining > 0);
+    viewerSubtitle.style.display = "none";
+    barWrap.style.display = "block";
+    const pct = current.total ? (current.remaining / current.total) * 100 : 0;
+    bar.style.width = pct + "%";
+    bar.classList.toggle("urgent", current.remaining <= 10);
+  }
+
+  const upNextCard = $("upNextCard");
+  if (queue.length) {
+    const next = queue[0];
+    const nt = TYPES[next.type];
+    upNextCard.style.display = "flex";
+    $("upNextName").textContent = next.name;
+    const b = $("upNextBadge");
+    b.textContent = nt.label;
+    b.className = "badge " + nt.badgeClass;
+  } else {
+    upNextCard.style.display = "none";
+  }
+
+  $("queueText").textContent =
+    queue.length === 0 ? "No one waiting" :
+    queue.length === 1 ? "1 Person Waiting" :
+    queue.length + " People Waiting";
+}
+
+function renderPanel(){
+  const name = $("currentName");
+  const sub = $("currentSub");
+  const ct = $("currentTimer");
+  const btn = $("startBtn");
+
+  if (!current) {
+    name.textContent = "No one yet";
+    sub.textContent = "Add someone to begin";
+    ct.style.display = "none";
+    ct.classList.remove("urgent");
+    btn.textContent = "▶ Start";
+  } else {
+    const t = TYPES[current.type];
+    name.textContent = current.name;
+    sub.textContent = t.label + " · " + t.time + " sec";
+    ct.style.display = "block";
+    ct.textContent = fmt(current.remaining);
+    ct.classList.toggle("urgent", current.remaining <= 10 && current.remaining > 0);
+    btn.textContent = current.running ? "⏸ Pause" : (current.remaining < current.total ? "▶ Resume" : "▶ Start");
   }
 }
 
-function renderQueue() {
-  const list     = document.getElementById('queueList');
-  const emptyMsg = document.getElementById('emptyMsg');
-  const qCount   = document.getElementById('qCount');
-  if (!list) return;
-  qCount.textContent = `(${queue.length})`;
-  list.querySelectorAll('.q-item').forEach(e => e.remove());
-  if (queue.length === 0) { emptyMsg.style.display = 'block'; return; }
-  emptyMsg.style.display = 'none';
-  queue.forEach((p, i) => {
+function renderQueue(){
+  $("qCount").textContent = "(" + queue.length + ")";
+  const list = $("queueList");
+  list.querySelectorAll(".q-item").forEach(x => x.remove());
+
+  const empty = $("emptyQueue");
+  empty.style.display = queue.length ? "none" : "block";
+
+  queue.forEach(function(p, i){
     const t = TYPES[p.type];
-    const item = document.createElement('div');
-    item.className = 'q-item';
-    item.innerHTML = `
-      <div class="q-num">${i+1}</div>
-      <div class="q-name">${p.name}</div>
-      <span class="type-badge ${t.badgeClass}" style="font-size:9px;padding:2px 7px;">${t.label}</span>
-      <button class="q-remove" onclick="removeFromQueue(${i})">×</button>`;
+    const item = document.createElement("div");
+    item.className = "q-item";
+    item.innerHTML =
+      '<div class="q-num">' + (i+1) + '</div>' +
+      '<div class="q-name"></div>' +
+      '<span class="badge ' + t.badgeClass + '" style="font-size:9px;padding:3px 7px;">' + t.label + '</span>' +
+      '<button class="remove-btn" onclick="removeFromQueue(' + i + ')">×</button>';
+    item.querySelector(".q-name").textContent = p.name;
     list.appendChild(item);
   });
 }
 
-function removeFromQueue(i) {
-  queue.splice(i, 1);
-  renderQueue();
-  renderOverlay();
-  broadcastState();
-}
+function launchConfetti(){
+  const stage = $("stage");
+  const viewerCard = $("viewerCard");
+  const rect = viewerCard.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const colors = ["#c084fc","#f472b6","#fb923c","#facc15","#34d399","#60a5fa","#fff"];
 
-// ══ RENDER OVERLAY ══
-function renderOverlay() {
-  const cardCurrent = document.getElementById('cardCurrent');
-  const ovName      = document.getElementById('ovName');
-  const ovBadge     = document.getElementById('ovBadge');
-  const ovTimer     = document.getElementById('ovTimer');
-  const ovYN        = document.getElementById('ovYN');
-  const ovBarWrap   = document.getElementById('ovBarWrap');
-  const ovBar       = document.getElementById('ovBar');
+  /* convert viewport coords to unscaled stage coords */
+  const left = (rect.left - stageRect.left) / scale;
+  const top = (rect.top - stageRect.top) / scale;
+  const width = rect.width / scale;
+  const height = rect.height / scale;
 
-  if (!current) {
-    cardCurrent.classList.remove('hidden');
-    ovName.textContent = 'Ask Psychic Medium';
-    ovName.classList.add('idle-title');
-    ovName.style.textAlign = 'center';
-
-    ovBadge.textContent = 'LIVE';
-    ovBadge.className = 'type-badge badge-q';
-
-    ovTimer.classList.add('hidden');
-    ovBarWrap.classList.remove('visible');
-
-    ovYN.classList.remove('hidden');
-    ovYN.classList.add('idle-subtitle');
-    ovYN.innerHTML = 'Check "Viewer Wishlist"<span style="display:block;text-align:center;">to join the queue</span>';
-
-    document.querySelector('.timer-row')?.classList.add('idle-center');
-
-    renderUpnext();
-    return;
+  for (let i=0; i<50; i++) {
+    setTimeout(function(){
+      const el = document.createElement("div");
+      el.className = "confetti";
+      el.style.left = (left + Math.random() * width) + "px";
+      el.style.top = (top + 8) + "px";
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      el.style.width = (Math.random()*7+5) + "px";
+      el.style.height = (Math.random()*7+5) + "px";
+      el.style.borderRadius = Math.random() > .5 ? "50%" : "2px";
+      el.style.setProperty("--fall", (height + 80) + "px");
+      el.style.setProperty("--drift", (Math.random()*120-60) + "px");
+      const dur = Math.random()*1.2 + 1.4;
+      el.style.animationDuration = dur + "s";
+      stage.appendChild(el);
+      setTimeout(function(){ el.remove(); }, dur*1000 + 300);
+    }, Math.random()*320);
   }
-  cardCurrent.classList.remove('hidden');
-  ovName.textContent = current.name;
-  ovName.classList.remove('idle-title');
-  ovName.style.textAlign = '';
-  ovYN.classList.remove('idle-subtitle');
-  document.querySelector('.timer-row')?.classList.remove('idle-center');
-  const t = TYPES[current.type];
-  ovBadge.textContent = t.label;
-  ovBadge.className   = 'type-badge ' + t.badgeClass;
-
-  if (current.totalSecs > 0) {
-    ovTimer.classList.remove('hidden');
-    ovYN.classList.add('hidden');
-    ovBarWrap.classList.add('visible');
-    ovTimer.textContent = fmt(current.remaining);
-    ovTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
-    const pct = (current.remaining / current.totalSecs) * 100;
-    ovBar.style.width = pct + '%';
-    ovBar.classList.toggle('urgent', current.remaining <= 10);
-  } else {
-    ovTimer.classList.add('hidden');
-    ovBarWrap.classList.remove('visible');
-    ovYN.classList.remove('hidden');
-    ovYN.textContent = t.label;
-  }
-  renderUpnext();
 }
 
-function renderUpnext() {
-  const cardUpnext    = document.getElementById('cardUpnext');
-  const ovUpnextName  = document.getElementById('ovUpnextName');
-  const ovUpnextBadge = document.getElementById('ovUpnextBadge');
-  if (queue.length === 0) { cardUpnext.classList.add('hidden'); return; }
-  const next = queue[0];
-  const t = TYPES[next.type];
-  cardUpnext.classList.remove('hidden');
-  ovUpnextName.textContent  = next.name;
-  ovUpnextBadge.textContent = t.label;
-  ovUpnextBadge.className   = 'upnext-badge ' + t.badgeClass;
-}
-
-function fmt(s) {
-  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-}
-
-// ══ SOUND ENGINE ══
-let selectedSound = 'bell';
-let soundVolume   = 0.40;
-
-function selectSound(el) {
-  document.querySelectorAll('.sound-btn').forEach(e => e.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedSound = el.dataset.sound;
-}
-
-function updateVolume(val) {
-  soundVolume = val / 100;
-  const pct = document.getElementById('volPct');
-  if (pct) pct.textContent = val + '%';
-}
-
-function makeReverb(ctx, secs=0.8) {
-  const conv = ctx.createConvolver();
-  const len  = ctx.sampleRate * secs;
-  const ir   = ctx.createBuffer(2, len, ctx.sampleRate);
-  for (let ch=0; ch<2; ch++) {
-    const d = ir.getChannelData(ch);
-    for (let i=0; i<len; i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.5);
-  }
-  conv.buffer = ir;
-  return conv;
-}
-
-function playTone(ctx, freq, type, vol, attack, decay, dest) {
-  const osc = ctx.createOscillator(), g = ctx.createGain();
-  osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
-  g.gain.setValueAtTime(0, ctx.currentTime);
-  g.gain.linearRampToValueAtTime(vol, ctx.currentTime + attack);
-  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + decay);
-  osc.connect(g); g.connect(dest);
-  osc.start(ctx.currentTime); osc.stop(ctx.currentTime + decay + 0.05);
-}
-
-function playChime() { /* sound disabled */ }
-
-// ══ CONFETTI ══
-function launchConfetti() {
-  const target = document.getElementById('cardCurrent') || document.getElementById('overlay');
-  const rect = target.getBoundingClientRect();
-  const colors = ['#c084fc','#f472b6','#fb923c','#facc15','#34d399','#60a5fa','#fff'];
-
-  for (let i=0; i<55; i++) setTimeout(() => {
-    const el = document.createElement('div');
-    el.className = 'confetti-piece';
-
-    const x = rect.left + Math.random() * rect.width;
-    const y = rect.top + 6;
-    const fallDistance = Math.max(120, rect.height + 70);
-
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    el.style.background = colors[Math.floor(Math.random()*colors.length)];
-    el.style.width  = (Math.random()*7+5)+'px';
-    el.style.height = (Math.random()*7+5)+'px';
-    el.style.borderRadius = Math.random()>0.5?'50%':'2px';
-    const dur = Math.random()*1.2+1.4;
-    el.style.animationDuration = dur+'s';
-    el.style.setProperty('--fallDistance', fallDistance + 'px');
-    el.style.setProperty('--drift',(Math.random()*120-60)+'px');
-    document.body.appendChild(el);
-    setTimeout(()=>el.remove(), dur*1000+500);
-  }, Math.random()*350);
-}
-
-// ══ KEYBOARD ══
-document.addEventListener('keydown', e => {
-  if (document.activeElement.tagName==='INPUT') return;
-  if (e.code==='Space') { e.preventDefault(); startStop(); }
-  if (e.code==='Enter') { e.preventDefault(); markDone(); }
-  if (e.code==='KeyR')  {
-    if (current) { current.remaining=current.totalSecs; renderCurrent(); renderOverlay(); broadcastState(); }
-  }
-});
-document.getElementById('nameInput')?.addEventListener('keydown', e => {
-  if (e.key==='Enter') addPerson();
+$("nameInput").addEventListener("keydown", function(e){
+  if (e.key === "Enter") window.addPerson();
 });
 
-// ══ INIT ══
-connectWS();
-// Overlay: request state after connection
-if (isOverlay) setTimeout(requestState, 1200);
-renderCurrent();
-renderQueue();
-renderOverlay();
+document.addEventListener("keydown", function(e){
+  if (document.activeElement && document.activeElement.tagName === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); window.startStop(); }
+  if (e.code === "Enter") { e.preventDefault(); window.nextPerson(); }
+  if (e.code === "KeyR" && current) {
+    current.remaining = current.total;
+    current.running = false;
+    stopTimer();
+    renderAll();
+  }
+});
+
+renderAll();
+})();
 </script>
 </body>
 </html>
