@@ -1,354 +1,724 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dennis Valchez Premium Simple Timer V2</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dennis Valchez Reading Queue Timer</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap');
 
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  background:transparent !important;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  font-family:'DM Sans', sans-serif;
+:root{
+  --black:#0a0a0a;
+  --soft:#f0ede8;
+  --border:rgba(0,0,0,.15);
+  --shadow:0 2px 20px rgba(0,0,0,.12),0 0 0 1.5px rgba(0,0,0,.09);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  width:100vw;
+  height:100vh;
   overflow:hidden;
+  background:transparent !important;
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  color:var(--black);
 }
 
-#timer-widget {
+/* MAIN WRAPPER — whole page transparent */
+#stage{
+  position:fixed;
+  inset:0;
+  background:transparent !important;
+}
+
+/* OVERLAY CARD — crop this in TikTok Studio */
+#overlay{
+  position:fixed;
+  top:30px;
+  left:30px;
+  width:620px;
   display:flex;
   flex-direction:column;
-  align-items:center;
-  margin-bottom:130px;
-  user-select:none;
+  gap:10px;
+  pointer-events:none;
+  z-index:50;
 }
-
-.card {
-  width:560px;
-  background:#fff;
-  border:2px solid rgba(0,0,0,0.15);
-  border-radius:24px;
-  box-shadow:0 2px 20px rgba(0,0,0,0.14), 0 0 0 1.5px rgba(0,0,0,0.08);
-  padding:24px 28px 22px;
-  text-align:center;
+.card-current{
+  background:white;
+  border:2px solid var(--border);
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  padding:22px 26px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
-
-.title {
-  font-family:'Cormorant Garamond', serif;
+.card-current.hidden{display:none;}
+.card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.current-name{
+  font-family:'Cormorant Garamond',serif;
   font-size:52px;
   font-weight:700;
-  line-height:1;
-  color:#0a0a0a;
+  line-height:1.05;
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
-
-.subtitle {
-  font-family:'Cormorant Garamond', serif;
-  font-size:29px;
-  font-weight:600;
-  line-height:1.15;
-  color:#0a0a0a;
-  margin-top:6px;
-}
-
-.divider {
-  height:2px;
-  background:rgba(0,0,0,0.15);
-  margin:15px 0;
-}
-
-.badge {
-  display:inline-block;
-  font-size:15px;
-  font-weight:900;
+.type-badge{
+  font-size:16px;
+  font-weight:700;
   letter-spacing:.5px;
   text-transform:uppercase;
-  padding:7px 15px;
-  border-radius:12px;
+  padding:6px 14px;
+  border-radius:10px;
+  white-space:nowrap;
   border:2px solid currentColor;
-  margin-bottom:12px;
 }
-
-.timer {
-  font-family:'Cormorant Garamond', serif;
-  font-size:92px;
+.badge-yn{color:#555;border-color:#ccc;background:#f5f5f5;}
+.badge-q{color:#2563eb;border-color:#bfdbfe;background:#eff6ff;}
+.badge-guid{color:#7c3aed;border-color:#ddd6fe;background:#f5f3ff;}
+.badge-mini{color:#059669;border-color:#a7f3d0;background:#ecfdf5;}
+.badge-med{color:#d97706;border-color:#fde68a;background:#fffbeb;}
+.badge-deep{color:#dc2626;border-color:#fecaca;background:#fef2f2;}
+.card-divider{height:2px;background:var(--border);}
+.timer-row{display:flex;align-items:center;gap:14px;}
+.timer-display{
+  font-family:'Cormorant Garamond',serif;
+  font-size:80px;
   font-weight:700;
-  line-height:.95;
   letter-spacing:2px;
-  color:#0a0a0a;
+  line-height:1;
+  min-width:180px;
 }
-
-.timer.urgent {
-  color:#dc2626;
-  animation:pulse .6s ease-in-out infinite alternate;
+.timer-display.urgent{color:#dc2626;animation:pulseUrgent 1s infinite;}
+.timer-display.hidden{display:none;}
+@keyframes pulseUrgent{
+  0%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.06);opacity:.72;}
+  100%{transform:scale(1);opacity:1;}
 }
-@keyframes pulse {
-  from { transform:scale(1); }
-  to { transform:scale(1.04); }
+.yn-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:52px;
+  font-weight:600;
+  font-style:italic;
+  line-height:1;
 }
-
-.status {
-  font-size:13px;
-  font-weight:900;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  color:rgba(0,0,0,0.42);
-  margin-top:12px;
-}
-
-.bar-wrap {
-  height:8px;
-  background:rgba(0,0,0,0.08);
-  border-radius:8px;
+.yn-text.hidden{display:none;}
+.timer-bar-wrap{
+  flex:1;
+  height:6px;
+  background:rgba(0,0,0,.08);
+  border-radius:6px;
   overflow:hidden;
-  margin-top:16px;
+  display:none;
 }
-.bar {
+.timer-bar-wrap.visible{display:block;}
+.timer-bar{
   height:100%;
   width:100%;
-  background:#0a0a0a;
-  border-radius:8px;
-  transition:width .35s linear;
+  background:var(--black);
+  border-radius:6px;
+  transition:width .5s linear;
 }
-.bar.urgent { background:#dc2626; }
-
-#control-panel {
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(255,255,255,0.96);
-  border:2px solid rgba(0,0,0,0.14);
-  border-radius:20px;
-  padding:14px 18px;
+.timer-bar.urgent{background:#dc2626;}
+.card-upnext{
+  background:white;
+  border:2px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 1px 8px rgba(0,0,0,.07);
+  padding:12px 20px;
   display:flex;
   align-items:center;
-  gap:9px;
-  z-index:1000;
-  box-shadow:0 8px 28px rgba(0,0,0,0.14);
-  flex-wrap:wrap;
-  justify-content:center;
-  max-width:96vw;
+  gap:12px;
 }
-
-.cp-label {
-  color:rgba(0,0,0,0.42);
-  font-size:11px;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:1px;
-}
-
-.title-input {
-  background:#fafafa;
-  border:1.5px solid #ddd;
-  color:#0a0a0a;
-  border-radius:10px;
-  padding:8px 12px;
-  font-family:'Cormorant Garamond', serif;
-  font-size:18px;
+.card-upnext.hidden{display:none;}
+.upnext-label{
+  font-size:14px;
   font-weight:700;
-  width:150px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.35);
+  white-space:nowrap;
+}
+.upnext-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:28px;
+  font-weight:600;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.upnext-badge{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.3px;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:7px;
+  border:1.5px solid currentColor;
+  white-space:nowrap;
+  margin-left:auto;
+}
+
+/* CONTROL PANEL — crop out if you only want the overlay */
+#panel{
+  position:fixed;
+  top:30px;
+  right:30px;
+  width:560px;
+  max-height:calc(100vh - 60px);
+  background:var(--soft);
+  border:1px solid rgba(0,0,0,.12);
+  border-radius:18px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  z-index:10;
+}
+.panel-header{
+  background:white;
+  border-bottom:1px solid #ddd;
+  padding:12px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.panel-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;
+  font-weight:700;
+}
+.panel-help{font-size:11px;color:#888;}
+.panel-body{display:flex;min-height:0;}
+.add-col{
+  width:235px;
+  background:white;
+  border-right:1px solid #ddd;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.queue-col{
+  flex:1;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
+.col-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(0,0,0,.38);
+}
+.name-input{
+  width:100%;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 14px;
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;
+  font-weight:600;
+  background:#fafafa;
   outline:none;
 }
-
-.time-btn {
-  background:#fafafa;
+.name-input:focus{border-color:#aaa;background:white;}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.type-option{
   border:1.5px solid #ddd;
-  color:#0a0a0a;
-  font-family:'DM Sans', sans-serif;
-  font-weight:900;
-  font-size:12px;
-  padding:7px 12px;
   border-radius:10px;
+  padding:9px 10px;
   cursor:pointer;
+  background:#fafafa;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  transition:all .15s;
 }
-.time-btn.active {
-  background:#0a0a0a;
-  color:#fff;
-  border-color:#0a0a0a;
-}
-
-.start-btn {
-  background:#0a0a0a;
+.type-option:hover{background:#f0f0f0;border-color:#bbb;}
+.type-option.selected{background:var(--black);border-color:var(--black);}
+.type-option.selected .to-name{color:white;}
+.type-option.selected .to-time{color:rgba(255,255,255,.55);}
+.to-name{font-size:12px;font-weight:700;line-height:1;}
+.to-time{font-size:10px;color:#999;}
+.add-btn,.btn-start,.btn-done,.btn-reset{
   border:none;
-  color:white;
-  font-family:'DM Sans', sans-serif;
-  font-weight:900;
-  font-size:13px;
-  padding:9px 22px;
-  border-radius:12px;
-  cursor:pointer;
-  text-transform:uppercase;
-}
-
-.reset-btn {
-  background:#eee;
-  border:1px solid #ddd;
-  color:#555;
-  font-family:'DM Sans', sans-serif;
-  font-weight:900;
-  font-size:12px;
-  padding:8px 14px;
   border-radius:10px;
+  font-family:'DM Sans',sans-serif;
+  font-weight:700;
   cursor:pointer;
+  transition:opacity .15s,background .15s;
+}
+.add-btn{width:100%;background:var(--black);color:white;padding:12px;font-size:14px;}
+.add-btn:hover,.btn-start:hover{opacity:.78;}
+.current-block{
+  background:white;
+  border:1.5px solid #ddd;
+  border-radius:var(--radius);
+  padding:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.current-block.empty{opacity:.45;}
+.cb-info{flex:1;min-width:0;}
+.cb-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.cb-sub{font-size:11px;color:#999;margin-top:2px;}
+.cb-timer{
+  font-family:'Cormorant Garamond',serif;
+  font-size:34px;
+  font-weight:700;
+  min-width:78px;
+  text-align:center;
+}
+.cb-timer.urgent{color:#dc2626;}
+.cb-timer.hidden{display:none;}
+.cb-btns{display:flex;flex-direction:column;gap:6px;}
+.btn-start{background:var(--black);color:white;padding:9px 14px;font-size:13px;min-width:95px;}
+.btn-done,.btn-reset{background:#f0f0f0;color:#555;border:1px solid #ddd;padding:8px 12px;font-size:12px;}
+.btn-done:hover,.btn-reset:hover{background:#e0e0e0;}
+.queue-label-row{display:flex;align-items:center;justify-content:space-between;}
+.queue-scroll{height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.q-item{
+  background:white;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.q-num{font-size:11px;font-weight:700;color:#ccc;min-width:16px;}
+.q-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;
+  font-weight:600;
+  flex:1;
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.q-remove{background:none;border:none;color:#bbb;font-size:18px;cursor:pointer;padding:2px 4px;}
+.q-remove:hover{color:#dc2626;}
+.empty-queue{text-align:center;padding:28px 20px;color:#aaa;font-size:13px;font-style:italic;background:rgba(255,255,255,.55);border-radius:12px;}
+.kbd-hint{font-size:11px;color:#aaa;text-align:center;padding-top:2px;}
+kbd{background:#eee;border:1px solid #ddd;border-radius:4px;padding:1px 5px;font-size:10px;font-family:monospace;}
+
+/* Confetti */
+.confetti-piece{
+  position:fixed;
+  top:-20px;
+  animation:confettiFall linear forwards;
+  pointer-events:none;
+  z-index:9999;
+  border-radius:2px;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg) translateX(0);opacity:1;}
+  80%{opacity:1;}
+  100%{transform:translateY(110vh) rotate(720deg) translateX(var(--drift));opacity:0;}
 }
 
-body.overlay-mode #control-panel { display:none !important; }
-body.overlay-mode #timer-widget { margin-bottom:0; }
+.custom-text-input{
+  width:100%;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:9px 12px;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  font-weight:700;
+  background:#fafafa;
+  outline:none;
+}
+.custom-text-input:focus{border-color:#aaa;background:white;}
+.custom-text-input::placeholder{color:#bbb;}
+
 </style>
 </head>
 <body>
+<div id="stage">
+  <div id="overlay">
+    <div class="card-current hidden" id="cardCurrent">
+      <div class="card-top">
+        <div class="current-name" id="ovName">—</div>
+        <div class="type-badge" id="ovBadge">WAITING</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="timer-row">
+        <div class="timer-display hidden" id="ovTimer">00:00</div>
+        <div class="yn-text hidden" id="ovYN">Waiting</div>
+        <div class="timer-bar-wrap" id="ovBarWrap"><div class="timer-bar" id="ovBar"></div></div>
+      </div>
+    </div>
 
-<div id="timer-widget">
-  <div class="card">
-    <div class="title" id="title">Ask Psychic Medium</div>
-    <div class="subtitle" id="subtitle">Check "Viewer Wishlist"<br>to join the queue</div>
-    <div class="divider"></div>
-    <div class="badge" id="badge">YES / NO</div>
-    <div class="timer" id="timer">00:10</div>
-    <div class="status" id="status">Ready</div>
-    <div class="bar-wrap"><div class="bar" id="bar"></div></div>
+    <div class="card-upnext hidden" id="cardUpnext">
+      <span class="upnext-label">Up Next</span>
+      <span class="upnext-name" id="ovUpnextName"></span>
+      <span class="upnext-badge" id="ovUpnextBadge"></span>
+    </div>
+
+    <div class="card-upnext" id="queueCounterCard">
+      <span class="upnext-label">Queue</span>
+      <span class="upnext-name" id="queueCounterText">No one waiting</span>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div class="panel-header">
+      <div class="panel-title">✦ Reading Queue</div>
+      <div class="panel-help"><kbd>Space</kbd> start · <kbd>Enter</kbd> next · <kbd>R</kbd> reset</div>
+    </div>
+    <div class="panel-body">
+      <div class="add-col">
+        <div class="col-label">Main overlay title</div>
+        <input class="custom-text-input" id="idleTitleInput" value="Ask Psychic Medium" maxlength="34" autocomplete="off" />
+
+        <div class="col-label">Subtitle / instruction</div>
+        <input class="custom-text-input" id="idleSubtitleInput" value='Check "Viewer Wishlist" to join the queue' maxlength="70" autocomplete="off" />
+
+        <div class="col-label">Add to queue</div>
+        <input class="name-input" id="nameInput" placeholder="Name…" maxlength="24" autocomplete="off" />
+        <div class="col-label">Reading type</div>
+        <div class="type-grid" id="typeGrid">
+          <div class="type-option selected" data-type="yn" onclick="selectType(this)"><div class="to-name">Yes / No</div><div class="to-time">10 sec</div></div>
+          <div class="type-option" data-type="q" onclick="selectType(this)"><div class="to-name">Question</div><div class="to-time">20 sec</div></div>
+          <div class="type-option" data-type="guid" onclick="selectType(this)"><div class="to-name">Guidance</div><div class="to-time">20 sec</div></div>
+          <div class="type-option" data-type="mini" onclick="selectType(this)"><div class="to-name">Mini Reading</div><div class="to-time">1 min</div></div>
+          <div class="type-option" data-type="med" onclick="selectType(this)"><div class="to-name">Mediumship</div><div class="to-time">3 min</div></div>
+          <div class="type-option" data-type="deep" onclick="selectType(this)"><div class="to-name">In-Depth</div><div class="to-time">5 min</div></div>
+        </div>
+        <button class="add-btn" onclick="addPerson()">＋ Add to Queue</button>
+      </div>
+
+      <div class="queue-col">
+        <div class="col-label">Now reading</div>
+        <div class="current-block empty" id="cbBlock">
+          <div class="cb-info">
+            <div class="cb-name" id="cbName">No one yet</div>
+            <div class="cb-sub" id="cbSub">Add someone to begin</div>
+          </div>
+          <div class="cb-timer hidden" id="cbTimer">—</div>
+          <div class="cb-btns">
+            <button class="btn-start" id="btnStart" onclick="startStop()">▶ Start</button>
+            <button class="btn-done" onclick="markDone()">✓ Done / Next</button>
+            <button class="btn-reset" onclick="resetTimer()">↻ Reset</button>
+          </div>
+        </div>
+
+        <div class="queue-label-row">
+          <div class="col-label">Queue <span id="qCount" style="color:#999">(0)</span></div>
+        </div>
+        <div class="queue-scroll" id="queueList">
+          <div class="empty-queue" id="emptyMsg">No one in queue yet</div>
+        </div>
+        <div class="kbd-hint"><kbd>Space</kbd> start/pause · <kbd>Enter</kbd> next person · <kbd>R</kbd> reset timer</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<div id="control-panel">
-  <span class="cp-label">Title</span>
-  <input class="title-input" id="titleInput" placeholder="Name/title">
-
-  <button class="time-btn active" id="btn-yn" onclick="setType('yn')">YES/NO</button>
-  <button class="time-btn" id="btn-q" onclick="setType('q')">QUESTION</button>
-  <button class="time-btn" id="btn-guid" onclick="setType('guid')">GUIDANCE</button>
-  <button class="time-btn" id="btn-mini" onclick="setType('mini')">MINI</button>
-  <button class="time-btn" id="btn-med" onclick="setType('med')">MEDIUM</button>
-  <button class="time-btn" id="btn-deep" onclick="setType('deep')">DEEP</button>
-
-  <button class="start-btn" id="startBtn" onclick="startTimer()">▶ START</button>
-  <button class="reset-btn" onclick="resetTimer()">↺ RESET</button>
-</div>
-
 <script>
-let type = 'yn';
 const TYPES = {
-  yn:   { label:'YES / NO', time:10, color:'#555', border:'#ccc', bg:'#f5f5f5' },
-  q:    { label:'QUESTION', time:20, color:'#2563eb', border:'#bfdbfe', bg:'#eff6ff' },
-  guid: { label:'GUIDANCE', time:20, color:'#7c3aed', border:'#ddd6fe', bg:'#f5f3ff' },
-  mini: { label:'MINI READING', time:60, color:'#059669', border:'#a7f3d0', bg:'#ecfdf5' },
-  med:  { label:'MEDIUMSHIP', time:180, color:'#d97706', border:'#fde68a', bg:'#fffbeb' },
-  deep: { label:'IN-DEPTH READING', time:300, color:'#dc2626', border:'#fecaca', bg:'#fef2f2' }
+  yn:   { label:'YES / NO',    badgeClass:'badge-yn',   time:10  },
+  q:    { label:'QUESTION',    badgeClass:'badge-q',    time:20  },
+  guid: { label:'GUIDANCE',    badgeClass:'badge-guid', time:20  },
+  mini: { label:'MINI READ',   badgeClass:'badge-mini', time:60  },
+  med:  { label:'MEDIUMSHIP',  badgeClass:'badge-med',  time:180 },
+  deep: { label:'IN-DEPTH',    badgeClass:'badge-deep', time:300 }
 };
 
-let total = TYPES[type].time;
-let remaining = total;
-let running = false;
-let interval = null;
+let queue = [];
+let current = null;
+let selectedType = 'yn';
+let timerInterval = null;
 
-if (new URLSearchParams(location.search).get('overlay') === '1') {
-  document.body.classList.add('overlay-mode');
+function selectType(el){
+  document.querySelectorAll('.type-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedType = el.dataset.type;
 }
 
-function $(id){ return document.getElementById(id); }
-
-function fmt(s){
-  const m = Math.floor(s/60);
-  const sec = s % 60;
-  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+function addPerson(){
+  const input = document.getElementById('nameInput');
+  const raw = input.value.trim();
+  if(!raw){ input.focus(); return; }
+  const name = raw.charAt(0).toUpperCase() + raw.slice(1);
+  queue.push({name, type:selectedType});
+  input.value = '';
+  input.focus();
+  if(!current) loadNext(false);
+  renderAll();
 }
 
-function renderTitle(){
-  const custom = $('titleInput').value.trim();
-  if (custom) {
-    $('title').textContent = custom;
-    $('subtitle').textContent = TYPES[type].label;
+function loadNext(){
+  stopTimer();
+  if(queue.length === 0){
+    current = null;
   } else {
-    $('title').textContent = 'Ask Psychic Medium';
-    $('subtitle').innerHTML = 'Check "Viewer Wishlist"<br>to join the queue';
+    const p = queue.shift();
+    const t = TYPES[p.type];
+    current = {name:p.name, type:p.type, totalSecs:t.time, remaining:t.time, running:false};
   }
+  renderAll();
 }
 
-function render(){
-  const t = TYPES[type];
-  renderTitle();
-
-  $('badge').textContent = t.label;
-  $('badge').style.color = t.color;
-  $('badge').style.borderColor = t.border;
-  $('badge').style.background = t.bg;
-
-  $('timer').textContent = fmt(remaining);
-  $('timer').classList.toggle('urgent', remaining <= 10 && remaining > 0 && running);
-
-  const pct = total ? (remaining / total) * 100 : 0;
-  $('bar').style.width = pct + '%';
-  $('bar').classList.toggle('urgent', remaining <= 10 && remaining > 0);
-
-  if (running) {
-    $('status').textContent = 'Reading in progress';
-    $('startBtn').textContent = '⏸ PAUSE';
-  } else if (remaining <= 0) {
-    $('status').textContent = 'Reading complete — press Start';
-    $('startBtn').textContent = '▶ START AGAIN';
+function startStop(){
+  if(!current) return;
+  if(current.running){
+    current.running = false;
+    stopTimer();
+    document.getElementById('btnStart').textContent = '▶ Resume';
   } else {
-    $('status').textContent = 'Ready';
-    $('startBtn').textContent = '▶ START';
+    if(current.remaining <= 0) current.remaining = current.totalSecs;
+    current.running = true;
+    document.getElementById('btnStart').textContent = '⏸ Pause';
+    startTimer();
   }
-}
-
-function setType(newType){
-  if (running) return;
-  type = newType;
-  total = TYPES[type].time;
-  remaining = total;
-
-  document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
-  $('btn-' + newType).classList.add('active');
-
-  resetTimer(false);
+  renderAll();
 }
 
 function startTimer(){
-  if (running) {
-    clearInterval(interval);
-    running = false;
-    render();
-    return;
-  }
-
-  if (remaining <= 0) remaining = total;
-  running = true;
-  render();
-
-  interval = setInterval(() => {
-    remaining = Math.max(0, remaining - 1);
-    render();
-
-    if (remaining <= 0) {
-      clearInterval(interval);
-      running = false;
-      render();
+  stopTimer();
+  timerInterval = setInterval(() => {
+    if(!current || !current.running) return;
+    current.remaining = Math.max(0, current.remaining - 1);
+    if(current.remaining <= 0){
+      current.running = false;
+      stopTimer();
+      document.getElementById('btnStart').textContent = '▶ Start';
+      launchConfetti();
     }
+    renderAll();
   }, 1000);
 }
 
-function resetTimer(update=true){
-  clearInterval(interval);
-  running = false;
-  remaining = total;
-  render();
+function stopTimer(){
+  if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
 }
 
-$('titleInput').addEventListener('input', render);
+function resetTimer(){
+  if(!current) return;
+  stopTimer();
+  current.running = false;
+  current.remaining = current.totalSecs;
+  document.getElementById('btnStart').textContent = '▶ Start';
+  renderAll();
+}
+
+function markDone(){
+  loadNext();
+}
+
+function removeFromQueue(i){
+  queue.splice(i,1);
+  renderAll();
+}
+
+function renderAll(){
+  renderCurrentPanel();
+  renderQueue();
+  renderOverlay();
+}
+
+function renderCurrentPanel(){
+  const block = document.getElementById('cbBlock');
+  const cbName = document.getElementById('cbName');
+  const cbSub = document.getElementById('cbSub');
+  const cbTimer = document.getElementById('cbTimer');
+  const btnStart = document.getElementById('btnStart');
+  if(!current){
+    block.classList.add('empty');
+    cbName.textContent = 'No one yet';
+    cbSub.textContent = 'Add someone to begin';
+    cbTimer.classList.add('hidden');
+    btnStart.textContent = '▶ Start';
+    return;
+  }
+  const t = TYPES[current.type];
+  block.classList.remove('empty');
+  cbName.textContent = current.name;
+  cbSub.textContent = `${t.label} · ${timeLabel(t.time)}`;
+  cbTimer.classList.remove('hidden');
+  cbTimer.textContent = fmt(current.remaining);
+  cbTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+  btnStart.textContent = current.running ? '⏸ Pause' : (current.remaining < current.totalSecs && current.remaining > 0 ? '▶ Resume' : '▶ Start');
+}
+
+function renderQueue(){
+  const list = document.getElementById('queueList');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const qCount = document.getElementById('qCount');
+  qCount.textContent = `(${queue.length})`;
+  list.querySelectorAll('.q-item').forEach(e => e.remove());
+  if(queue.length === 0){ emptyMsg.style.display = 'block'; return; }
+  emptyMsg.style.display = 'none';
+  queue.forEach((p,i) => {
+    const t = TYPES[p.type];
+    const item = document.createElement('div');
+    item.className = 'q-item';
+    item.innerHTML = `
+      <div class="q-num">${i+1}</div>
+      <div class="q-name">${escapeHtml(p.name)}</div>
+      <span class="type-badge ${t.badgeClass}" style="font-size:9px;padding:2px 7px;">${t.label}</span>
+      <button class="q-remove" onclick="removeFromQueue(${i})">×</button>`;
+    list.appendChild(item);
+  });
+}
+
+
+function getIdleTitle(){
+  const input = document.getElementById('idleTitleInput');
+  const value = input ? input.value.trim() : '';
+  return value || 'Ask Psychic Medium';
+}
+
+function getIdleSubtitle(){
+  const input = document.getElementById('idleSubtitleInput');
+  const value = input ? input.value.trim() : '';
+  return value || 'Check "Viewer Wishlist" to join the queue';
+}
+
+function formatIdleSubtitle(text){
+  const safe = escapeHtml(text);
+  // Auto split if it contains " to " so it fits nicer.
+  if(safe.includes(' to ')){
+    return safe.replace(' to ', '<span style="display:block;text-align:center;">to ');
+  }
+  return safe;
+}
+
+function renderOverlay(){
+  const cardCurrent = document.getElementById('cardCurrent');
+  const ovName = document.getElementById('ovName');
+  const ovBadge = document.getElementById('ovBadge');
+  const ovTimer = document.getElementById('ovTimer');
+  const ovYN = document.getElementById('ovYN');
+  const ovBarWrap = document.getElementById('ovBarWrap');
+  const ovBar = document.getElementById('ovBar');
+
+  if(!current){
+    cardCurrent.classList.remove('hidden');
+    ovName.textContent = getIdleTitle();
+    ovName.classList.add('idle-title');
+    ovName.style.textAlign = 'center';
+    ovBadge.textContent = 'LIVE';
+    ovBadge.className = 'type-badge badge-q';
+    ovTimer.classList.add('hidden');
+    ovYN.classList.remove('hidden');
+    ovYN.innerHTML = formatIdleSubtitle(getIdleSubtitle());
+    ovYN.classList.add('idle-subtitle');
+    document.querySelector('.timer-row')?.classList.add('idle-center');
+    ovBarWrap.classList.remove('visible');
+    renderUpnext();
+    updateQueueCounter();
+    return;
+  }
+
+  const t = TYPES[current.type];
+  cardCurrent.classList.remove('hidden');
+  ovName.textContent = current.name;
+  ovName.classList.remove('idle-title');
+  ovName.style.textAlign = '';
+  ovBadge.textContent = t.label;
+  ovBadge.className = 'type-badge ' + t.badgeClass;
+  ovTimer.classList.remove('hidden');
+  ovYN.classList.add('hidden');
+  ovTimer.textContent = fmt(current.remaining);
+  ovTimer.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+  ovBarWrap.classList.add('visible');
+  const pct = current.totalSecs ? (current.remaining / current.totalSecs) * 100 : 0;
+  ovBar.style.width = pct + '%';
+  ovBar.classList.toggle('urgent', current.remaining <= 10 && current.remaining > 0);
+  renderUpnext();
+  updateQueueCounter();
+}
+
+function renderUpnext(){
+  const card = document.getElementById('cardUpnext');
+  const name = document.getElementById('ovUpnextName');
+  const badge = document.getElementById('ovUpnextBadge');
+  if(queue.length === 0){ card.classList.add('hidden'); return; }
+  const next = queue[0];
+  const t = TYPES[next.type];
+  card.classList.remove('hidden');
+  name.textContent = next.name;
+  badge.textContent = t.label;
+  badge.className = 'upnext-badge ' + t.badgeClass;
+}
+
+function updateQueueCounter(){
+  const el = document.getElementById('queueCounterText');
+  const count = queue.length;
+  if(count === 0) el.textContent = 'No one waiting';
+  else if(count === 1) el.textContent = '1 Person Waiting';
+  else el.textContent = count + ' People Waiting';
+}
+
+function fmt(s){
+  s = Math.max(0, Number(s) || 0);
+  return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+}
+
+function timeLabel(s){
+  if(s < 60) return s + ' sec';
+  return Math.round(s/60) + ' min';
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+
+function launchConfetti(){
+  const colors = ['#c084fc','#f472b6','#fb923c','#facc15','#34d399','#60a5fa','#fff'];
+  for(let i=0;i<60;i++){
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random()*100 + 'vw';
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      el.style.width = (Math.random()*7+5) + 'px';
+      el.style.height = (Math.random()*7+5) + 'px';
+      el.style.borderRadius = Math.random()>.5 ? '50%' : '2px';
+      const dur = Math.random()*2 + 2;
+      el.style.animationDuration = dur + 's';
+      el.style.setProperty('--drift', (Math.random()*200-100) + 'px');
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), dur*1000+500);
+    }, Math.random()*500);
+  }
+}
 
 document.addEventListener('keydown', e => {
-  if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
-  if (e.code === 'Space') { e.preventDefault(); startTimer(); }
-  if (e.code === 'KeyR') resetTimer();
+  if(document.activeElement && document.activeElement.tagName === 'INPUT') return;
+  if(e.code === 'Space'){ e.preventDefault(); startStop(); }
+  if(e.code === 'Enter'){ e.preventDefault(); markDone(); }
+  if(e.code === 'KeyR'){ e.preventDefault(); resetTimer(); }
+});
+document.getElementById('nameInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter') addPerson();
 });
 
-render();
+document.getElementById('idleTitleInput').addEventListener('input', renderOverlay);
+document.getElementById('idleSubtitleInput').addEventListener('input', renderOverlay);
+
+renderAll();
 </script>
 </body>
 </html>
